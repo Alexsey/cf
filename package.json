@@ -1,0 +1,22 @@
+{
+  "name": "cf_",
+  "version": "0.0.1",
+  "description": "codeforces test runner",
+  "bin": "./bin/cf_.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alexsey/cf_.git"
+  },
+  "keywords": [
+    "codeforces"
+  ],
+  "author": "Alexsey",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Alexsey/cf_/issues"
+  },
+  "homepage": "https://github.com/Alexsey/cf_#readme"
+}
