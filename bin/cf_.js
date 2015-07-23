@@ -1,21 +1,20 @@
 #!/usr/bin/env node
 
-var fs = require('fs');
-var util = require('util');
+var fs = require('fs')
+var colors = require('colors')
 
-//console.log('start')
-//
-var arg = process.argv
-console.log('envs: ' + util.inspect(arg, false, null, true))
+var args = process.argv.slice(2)
 var pwd = process.env.PWD
-console.log('executed from: ', pwd)
 
-var fileName = arg[2]
+var codeFileName = args[0]
+var testFileName = args[1]
+testFileName = testFileName
+  || codeFileName.slice(-3) == '.js' && readFile(codeFileName.slice(0, -3))
+  || readFile(codeFileName.slice(0, -2) + 'test')
+  || readFile('tests')
+  || readFile('test')
 
-var testFile = fs.readFileSync(fileName, 'utf8')
-var borderFile = fs.readFileSync(pwd + '/test2', 'utf8')
-
-console.log('exec main file:')
-eval(testFile)
-console.log('exec border file:')
-eval(borderFile)
+function readFile (fileName) {
+  try {return fs.readFileSync(fileName, 'utf8') || ' '} catch (e) {}
+  //try {return fs.readFileSync(pwd + '/' + fileName, 'utf8') || ' '} catch (e) {}
+}
