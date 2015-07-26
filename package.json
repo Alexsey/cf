@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/Alexsey/cf_/issues"
   },
-  "homepage": "https://github.com/Alexsey/cf_#readme"
+  "homepage": "https://github.com/Alexsey/cf_#readme",
+  "dependencies": {
+    "colors": "^1.1.2"
+  }
 }
