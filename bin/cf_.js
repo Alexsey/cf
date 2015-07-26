@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --harmony
 
 var fs = require('fs')
 var colors = require('colors')
@@ -34,11 +34,8 @@ testsStr.split('\n\n').reverse().forEach(function (paragraph, i) {
   (i % 2 ? inputs : outputs).push(paragraph)
 })
 
-var tests = []
-var input
+var input, tests = []
 while (input = inputs.shift()) tests.push({input: input, output: outputs.shift()})
-tests.reverse()
-var parameters = outputs.shift()
 
 var testsRunOnly = []
 var testsCommon = []
@@ -51,3 +48,20 @@ tests.forEach(function (test) {
   }
 })
 tests = testsRunOnly.length ? testsRunOnly : testsCommon
+tests.reverse()
+
+var params = {}
+var paramsStr = outputs[0]
+if (paramsStr) {
+  var paramsWords = paramsStr.split(' ').filter(Boolean)
+  for (var i = 0; i < paramsWords.length; i++) {
+    var word = paramsWords[i]
+    var nextWord = paramsWords[i + 1]
+    var previousWord = paramsWords[i - 1]
+    if      (word == '=')          {params[previousWord]       = nextWord; i++}
+    else if (word.startsWith('=')) {params[previousWord]       = word.slice(1)}
+    else if (word.endsWith('='))   {params[word.slice(0, -1)]  = nextWord; i++}
+    else if (~word.indexOf('='))   {params[word.split('=')[0]] = word.split('=')[1]}
+    else                           {params[word]               = true}
+  }
+}
