@@ -1,14 +1,14 @@
 {
-  "name": "cf_",
-  "version": "0.0.1",
+  "name": "cf",
+  "version": "0.1.0",
   "description": "codeforces test runner",
-  "bin": "./bin/cf_.js",
+  "bin": "./bin/cf.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Alexsey/cf_.git"
+    "url": "git+https://github.com/Alexsey/cf.git"
   },
   "keywords": [
     "codeforces"
@@ -16,9 +16,9 @@
   "author": "Alexsey",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Alexsey/cf_/issues"
+    "url": "https://github.com/Alexsey/cf/issues"
   },
-  "homepage": "https://github.com/Alexsey/cf_#readme",
+  "homepage": "https://github.com/Alexsey/cf#readme",
   "dependencies": {
     "colors": "^1.1.2"
   }
