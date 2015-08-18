@@ -19,25 +19,40 @@ var testsStr = readFile(testFileName)
 
 // todo read tests from code file
 
-function readFile (fileName) {try {return fs.readFileSync(fileName, 'utf8').replace(/\r/g, '') || ' '} catch (e) {}}
+function readFile (fileName) {
+  try {
+    return fs.readFileSync(fileName, 'utf8').replace(/\r/g, '') || ' '
+  } catch (e) {}
+}
 
 if (!testsStr) throw 'no tests found'
 
 var inputs = []
 var expectations = []
-testsStr = testsStr.replace(/\n{3,}/g, '\n\n').trim()
-testsStr.split('\n\n').reverse().forEach(function (paragraph, i) {(i % 2 ? inputs : expectations).push(paragraph)})
+testsStr
+  .replace(/\n{3,}/g, '\n\n')
+  .trim()
+  .split('\n\n')
+  .reverse()
+  .forEach(function (paragraph, i) {
+    (i % 2 ? inputs : expectations).push(paragraph)
+  })
+var testsQuantity = inputs.length
 
 var input, tests = []
-while (input = inputs.shift()) tests.push({input: input, expectation: expectations.shift()})
+while (input = inputs.shift())
+  tests.push({
+    input: input,
+    expectation: expectations.shift()
+  })
 
 var testsRunOnly = []
 var testsCommon = []
 tests.forEach(function (test) {
-  if (test.input[0] == '+') {
+  if (test.input.startsWith('+')) {
     test.input = test.input.slice(2)
     testsRunOnly.push(test)
-  } else if (test.input[0] != '-') {
+  } else if (!test.input.startsWith('-')) {
     testsCommon.push(test)
   }
 })
@@ -74,25 +89,39 @@ tests.forEach(function (test) {
   if (params.e
       ? Math.abs(test.expectation - actual) >= Math.pow(10, -params.e)
       : actual != test.expectation + '\n')
-    failedTests.push({actual: actual.trim(), expectation: test.expectation, input: test.input})
+    failedTests.push({
+      actual: actual.trim(),
+      expectation: test.expectation, input: test.input
+    })
 })
 
+if (tests.length < testsQuantity && !failedTests.length)
+  console.log(colors.green.bold([tests.length, 'of', testsQuantity].join(' ')))
+
 failedTests.forEach(function (fail) {
-  var expectation = fail.expectation.split('\n').reverse()
-  var actual = fail.actual.split('\n').reverse()
-  var input = fail.input.split('\n').reverse()
-  if (params.n) {expectation.push(''); actual.push('')}
-  var expectationWidth = expectation.reduce(function (maxWidth, line) {return Math.max(maxWidth, line.length)}, 0)
-  var inputWidth       = input      .reduce(function (maxWidth, line) {return Math.max(maxWidth, line.length)}, 0)
+  var expectations = fail.expectation.split('\n').reverse()
+  var actuals = fail.actual.split('\n').reverse()
+  var inputs = fail.input.split('\n').reverse()
+  if (params.n) {expectations.push(''); actuals.push('')}
+  var expectationWidth = longestOf(expectations)
+  var inputWidth = longestOf(inputs)
   do {
-    var inputLinePart = input.pop() || ''
-    var inputLinePadding = new Array(inputWidth - inputLinePart.length + 3).join(' ')
-    var expectedLinePart = expectation.pop() || ''
-    var expectedLinePadding = new Array(expectationWidth - expectedLinePart.length + 3).join(' ')
-    var actualLinePart = actual.pop() || ''
-    console.log(colors.yellow.bold(inputLinePart) + inputLinePadding
-              + colors.green.bold(expectedLinePart) + expectedLinePadding
-              + colors.red.bold(actualLinePart))
+    var input = inputs.pop() || ''
+    var inputPaddingSize = inputWidth - input.length + 3
+    var inputPadding = new Array(inputPaddingSize).join(' ')
+    var expected = expectations.pop() || ''
+    var expectedPaddingSize = expectationWidth - expected.length + 3
+    var expectedPadding = new Array(expectedPaddingSize).join(' ')
+    var actual = actuals.pop() || ''
+    console.log(colors.yellow.bold(input) + inputPadding +
+                colors.green.bold(expected) + expectedPadding +
+                colors.red.bold(actual))
   }
-  while (inputLinePart + expectedLinePart + actualLinePart)
+  while (input + expected + actual)
+
+  function longestOf (arrOfStr) {
+    return arrOfStr.reduce(function (maxWidth, line) {
+        return Math.max(maxWidth, line.length)
+      }, 0)
+  }
 })
