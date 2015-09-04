@@ -1,19 +1,28 @@
 #!/usr/bin/env node --harmony
 
 var fs = require('fs')
+var path = require('path')
 
 var colors = require('colors/safe')
 
 var args = process.argv.slice(2)
-var codeFileName = args[0]
-var codeStr = fs.readFileSync(codeFileName, 'utf8').replace(/\r/g, '')
+var codeFilePath = args[0]
+if (!codeFilePath.endsWith('.js')) codeFilePath += '.js'
+var codeStr = readFile(codeFilePath)
+
+if (!codeStr) {
+	var codeFileFullPath = path.join(process.cwd(), codeFilePath)
+	var error = "ENOENT: no such file or directory '" + codeFileFullPath + "'"
+	return console.log(colors.red.bold(error))
+}
+
 eval('function main (readline, write, print) {' + codeStr + '}')
 
 // todo read test files async
 var testFileName = args[1]
 var testsStr = readFile(testFileName)
-	|| readFile(codeFileName.slice(0, -3)) // 1A.js -> 1A
-	|| readFile(codeFileName.slice(0, -2) + 'test') // 1A.js -> 1A.test
+	|| readFile(codeFilePath.slice(0, -3)) // 1A.js -> 1A
+	|| readFile(codeFilePath.slice(0, -2) + 'test') // 1A.js -> 1A.test
 	|| readFile('tests')
 	|| readFile('test')
 
@@ -25,7 +34,8 @@ function readFile (fileName) {
 	} catch (e) {}
 }
 
-if (!testsStr) throw 'no tests found'
+if (!testsStr) return console.log(colors.red.bold('no tests found'))
+
 
 var inputs = []
 var expectations = []
