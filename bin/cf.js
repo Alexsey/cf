@@ -87,7 +87,7 @@ tests.forEach(function (test) {
 
 	// todo may be support some extra character for output to just print the result?
 	if (params.e
-			? Math.abs(test.expectation - actual) >= Math.pow(10, -params.e)
+			? !(Math.abs(test.expectation - actual) < Math.pow(10, -params.e))
 			: actual != test.expectation + '\n')
 		failedTests.push({
 			actual: actual.trim(),
