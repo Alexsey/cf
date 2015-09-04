@@ -95,8 +95,11 @@ tests.forEach(function (test) {
 		})
 })
 
-if (tests.length < testsQuantity && !failedTests.length)
+if (tests.length < testsQuantity && !failedTests.length) {
+	if (~codeStr.indexOf('console.log'))
+		console.log('\n' + colors.yellow('console.log'))
 	console.log(colors.green.bold([tests.length, 'of', testsQuantity].join(' ')))
+}
 
 failedTests.forEach(function (fail) {
 	var expectations = fail.expectation.split('\n').reverse()
