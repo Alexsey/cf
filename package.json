@@ -1,25 +1,26 @@
 {
-	"name": "cf",
-	"version": "0.2.0",
-	"description": "codeforces test runner",
-	"bin": "./bin/cf.js",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/Alexsey/cf.git"
-	},
-	"keywords": [
-		"codeforces"
-	],
-	"author": "Alexsey",
-	"license": "ISC",
-	"bugs": {
-		"url": "https://github.com/Alexsey/cf/issues"
-	},
-	"homepage": "https://github.com/Alexsey/cf#readme",
-	"dependencies": {
-		"colors": "^1.1.2"
-	}
+  "name": "cf",
+  "version": "0.3.0",
+  "description": "codeforces test runner",
+  "bin": "./bin/cf.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alexsey/cf.git"
+  },
+  "keywords": [
+    "codeforces"
+  ],
+  "author": "Alexsey",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Alexsey/cf/issues"
+  },
+  "homepage": "https://github.com/Alexsey/cf#readme",
+  "dependencies": {
+    "colors": "^1.1.2",
+    "lodash": "^3.10.1"
+  }
 }
