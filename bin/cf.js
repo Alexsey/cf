@@ -4,6 +4,7 @@
 let fs = require('fs')
 let path = require('path')
 
+process.stdout.isTTY = true
 require('colors')
 let _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 
