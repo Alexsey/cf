@@ -85,10 +85,11 @@ function parseTestsFile () {
 				default : return 'run'
 			}
 		})
-		let testsRunOnly = sortedTests.runOnly
-			&& sortedTests.runOnly.forEach(v => v.input = v.input.slice(2))
-		let testsCommon = sortedTests.run
-		let testsToRun = testsRunOnly || testsCommon
+		var testsRunOnly = _.forEach(sortedTests.runOnly,
+				v => v.input = v.input.slice(1).trimLeft()
+		)
+		var commonTests = sortedTests.run
+		let testsToRun = testsRunOnly || commonTests
 		if (!testsToRun) terminate('no tests to run')
 
 		return {
@@ -97,8 +98,9 @@ function parseTestsFile () {
 		}
 	}
 
+	//function parseParams (paramsLine = '') {
 	function parseParams (paramsLine) {
-		return _(_(paramsLine)               // ' n   e =2 '
+		return _(_(paramsLine || '')         // ' n   e =2 '
 			.split('=')                        // [' n   e ', '2 ']
 			.invoke('trim')                    // ['n   e', '2']
 			.join('=')                         // ['n   e=2']
@@ -158,7 +160,7 @@ function printFailedResults (failedTests) {
 		let expectationWidth = _(expectations).pluck('length').max() + 3
 		let inputWidth       = _(inputs)      .pluck('length').max() + 3
 
-		while (actuals.length || expectations.length || actuals.length)
+		while (inputs.length || expectations.length || actuals.length)
 			console.log(
 				_(inputs.pop()       || '').padRight(inputWidth).yellow.bold +
 				_(expectations.pop() || '').padRight(expectationWidth).green.bold +
