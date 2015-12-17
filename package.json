@@ -1,8 +1,8 @@
 {
   "name": "cf",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "codeforces test runner",
-  "bin": "./bin/cf.js",
+  "bin": "./index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -21,6 +21,9 @@
   "homepage": "https://github.com/Alexsey/cf#readme",
   "dependencies": {
     "colors": "^1.1.2",
-    "lodash": "^3.10.1"
+    "lodash": "^3.10.1",
+    "babel-register": "^6.3.13",
+    "babel-plugin-transform-es2015-destructuring": "^6.1.18",
+    "babel-plugin-transform-es2015-parameters": "^6.1.18"
   }
 }
