@@ -64,7 +64,7 @@ function parseTestsFile () {
 
 	function parseTests (paragraphs) {
 		const tests = _.chunk(paragraphs, 2)
-				.map(([input, expectation]) => ({input, expectation}))
+			.map(([input, expectation]) => ({input, expectation}))
 
 		const {testsRunOnly, testsCommon} = _.groupBy(tests, v => {
 			switch (v.input[0]) {
@@ -111,21 +111,23 @@ function runTests (main, tests, params) {
 		main(readline, write, print)
 
 		// todo may be support some extra character for output to just print the result?
+		// todo add special char for empty expectation
 		if (!actual.endsWith('\n')) {
 			failedTests.push({
 				actual: actual.trim(),
 				expectation: 'test output must ends with \\n',
 				input: test.input
 			})
-		} else if (params.e
-				? Math.abs(test.expectation - actual) >= Math.pow(10, -params.e)
-				: actual != test.expectation + '\n'
-		)
+		} else if (params.e && _.isFinite(test.expectation - actual)
+			? Math.abs(test.expectation - actual) >= Math.pow(10, -params.e)
+			: actual != test.expectation + '\n'
+		) {
 			failedTests.push({
 				actual: actual.trim(),
 				expectation: test.expectation,
 				input: test.input
 			})
+		}
 	})
 	return failedTests
 }
