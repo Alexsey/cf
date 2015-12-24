@@ -146,10 +146,9 @@ function printFailedResults (failedTests) {
 		const actuals      = failedTest.actual     .split('\n').reverse()
 		const inputs       = failedTest.input      .split('\n').reverse()
 
-		_.times(inputs.length - expectations.length, () => {
-			expectations.push('')
-			actuals.push('')
-		})
+		const outputHeight = _([expectations, actuals, inputs]).map('length').max()
+		const pad = a => a.fill('', a.length, a.length = outputHeight)
+		;[expectations, actuals, inputs].map(pad)
 
 		const expectationWidth = _(expectations).map('length').max() + 3
 		const inputWidth       = _(inputs)      .map('length').max() + 3
