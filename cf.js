@@ -99,7 +99,7 @@ function parseTestsFile () {
 }
 
 function runTests (main, tests, params) {
-	// think over better form, may be without explicit failedTests
+	// todo replace forEach with transform (or may be something even better?)
 	const failedTests = []
 	tests.forEach(test => {
 		let actual = ''
