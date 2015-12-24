@@ -146,12 +146,10 @@ function printFailedResults (failedTests) {
 		const actuals      = failedTest.actual     .split('\n').reverse()
 		const inputs       = failedTest.input      .split('\n').reverse()
 
-		// todo pad expectations and actuals to inputs with ''
-		console.log('!!!!!', inputs.length, expectations.length)
-		if (inputs.length - expectations.length == 1) {
+		_.times(inputs.length - expectations.length, () => {
 			expectations.push('')
 			actuals.push('')
-		}
+		})
 
 		const expectationWidth = _(expectations).map('length').max() + 3
 		const inputWidth       = _(inputs)      .map('length').max() + 3
