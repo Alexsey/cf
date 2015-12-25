@@ -153,12 +153,11 @@ function printFailedResults (failedTests) {
 		const expectationWidth = _(expectations).map('length').max() + 3
 		const inputWidth       = _(inputs)      .map('length').max() + 3
 
-		while (inputs.length || expectations.length || actuals.length)
-			console.log(
-				_(inputs.pop()       || '').padRight(inputWidth).yellow.bold +
-				_(expectations.pop() || '').padRight(expectationWidth).green.bold +
-				 (actuals.pop()      || '').red.bold
-			)
+		_.times(outputHeight, () => console.log(
+			_(inputs.pop()      ).padRight(inputWidth).yellow.bold +
+			_(expectations.pop()).padRight(expectationWidth).green.bold +
+		   (actuals.pop()     ).red.bold
+		))
 	})
 }
 
