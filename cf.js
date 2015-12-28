@@ -2,6 +2,7 @@
 
 const fs = require('fs')
 const path = require('path')
+const util = require('util') // todo delete me
 
 process.stdout.isTTY = true // some terminals need this to enable color output
 require('colors')
@@ -99,16 +100,18 @@ function parseTestsFile () {
 }
 
 function runTests (main, tests, params) {
-	// todo replace forEach with transform (or may be something even better?)
-	const failedTests = []
-	tests.forEach(test => {
+	return _.transform(tests, (failedTests, test) => {
 		let actual = ''
 		const input = test.input.split('\n').reverse()
 		const readline = () => input.pop()
 		const write = str => actual += str
 		const print = str => actual += str + '\n'
 
-		main(readline, write, print)
+		// todo test throw in main
+		// todo add timers
+		try {
+			main(readline, write, print)
+		} catch (e) {terminate(e)}
 
 		// todo may be support some extra character for output to just print the result?
 		// todo add special char for empty expectation
@@ -129,7 +132,6 @@ function runTests (main, tests, params) {
 			})
 		}
 	})
-	return failedTests
 }
 
 function printWarnings (code, ranTests, failedTests, testsQuantity, params) {
@@ -172,10 +174,38 @@ function readFile (fileName) {
 }
 
 function terminate (error) {
-	if (error) {
+	if (_.isString(error)) {
 		process.stderr.write(error.red)
+		terminate(1)
+	} else if (_.isError(error)) {
+		let [line, pos] = error.stack.match(/<anonymous>\:(\d+\:\d+)/)[1].split(':')
+		process.stderr.write(`\n${error.toString()}\n\tat ${line - 2}:${pos}\n\n`)
+		process.stderr.write(`\n${parseStackTrace(error.stack)}\n\n`)
+		process.stderr.write(error.stack)
 		process.exit(1)
 	} else {
 		process.exit(0)
+	}
+
+	function parseStackTrace (stackTrace) {
+		stackTrace = stackTrace.split('\n')
+		const message = stackTrace[0]
+		const codeFilePath = formatCodeFilePath(process.argv[2])
+		const codeFileName = _.last(codeFilePath.split(/\\|\//))
+		let mainStackTrace = stackTrace
+			.filter(RegExp().test.bind(/eval\sat\s<anonymous>.*<anonymous>\:(\d+\:\d+)/))
+			.map(line => [
+				line.match(/at\s([^\s]+)/)[1],
+				line.match(/<anonymous>\:(\d+\:\d+)/)[1].split(':')])
+
+		const topLevelTrace = mainStackTrace.pop()
+		mainStackTrace = mainStackTrace.map(([fName, [line, pos]]) => `\t${line - 2}:${pos}  at  ${fName}`)
+		mainStackTrace.push(`\t${topLevelTrace[1][0] - 2}:${topLevelTrace[1][1]}  in  ${codeFileName}`)
+
+		//_.last(mainStackTrace)[0] = codeFileName
+		//mainStackTrace = mainStackTrace.map(([fName, [line, pos]]) => `\t${line - 2}:${pos}  at  ${fName}`)
+		//mainStackTrace[mainStackTrace.length - 1] = mainStackTrace[mainStackTrace.length - 1].replace('at', 'in')
+		mainStackTrace.unshift(message)
+		return mainStackTrace.join('\n')
 	}
 }
