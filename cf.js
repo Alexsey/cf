@@ -174,14 +174,13 @@ function readFile (fileName) {
 
 function terminate (error) {
 	if (_.isError(error)) {
-		process.stderr.write(formatStackTrace(error.stack))
-		process.exit(1)
+		process.stderr.write(formatStackTrace(error.stack).red)
+	} else if (_.isString(error)) {
+		process.stderr.write(error.red)
 	} else if (arguments.length) {
-		process.stderr.write(util.inspect(error, false, null))
-		process.exit(1)
-	} else {
-		process.exit(0)
+		process.stderr.write(util.inspect(error, false, null).red)
 	}
+	process.exit(1)
 
 	function formatStackTrace (stackTrace) {
 		stackTrace = stackTrace.split('\n')
