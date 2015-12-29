@@ -134,10 +134,20 @@ function runTests (main, tests, params) {
 }
 
 function printWarnings (code, ranTests, failedTests, testsQuantity, params) {
-	// todo print warnings for unknown params and test valid ones
-	if (ranTests.length < testsQuantity && !failedTests.length) {
-		code.includes('console.log') && console.log('\nconsole.log'.yellow)
+	const validParams = ['e']
+	const unknownParams = _.difference(_.keys(params), validParams)
+	if (unknownParams.length)
+		console.log((`unknown parameter${sForPlural(unknownParams)}: ` +
+			`${unknownParams.join(', ')}\n`).cyan.bold)
+	if (!_.isFinite(+params.e))
+		console.log('parameter `e` should be number\n'.cyan.bold)
+	if (!failedTests.length && code.includes('console.log'))
+		console.log('console.log\n'.yellow.bold)
+	if (!failedTests.length && ranTests.length < testsQuantity)
 		console.log(`${ranTests.length} of ${testsQuantity}`.green.bold)
+
+	function sForPlural (arr) {
+		return arr.length > 1 ? 's' : ''
 	}
 }
 
