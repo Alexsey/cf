@@ -120,7 +120,7 @@ function runTests (main, tests, params) {
 				expectation: 'test output must ends with \\n',
 				input: test.input
 			})
-		} else if (params.e && _.isFinite(test.expectation - actual)
+		} else if ([+params.e, +test.expectation, +actual].every(_.isFinite)
 			? Math.abs(test.expectation - actual) >= Math.pow(10, -params.e)
 			: actual != test.expectation + '\n'
 		) {
