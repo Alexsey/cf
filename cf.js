@@ -2,7 +2,7 @@
 
 const fs = require('fs')
 const path = require('path')
-const util = require('util') // todo delete me
+const util = require('util')
 
 process.stdout.isTTY = true // some terminals need this to enable color output
 require('colors')
@@ -107,7 +107,6 @@ function runTests (main, tests, params) {
 		const write = str => actual += str
 		const print = str => actual += str + '\n'
 
-		// todo test throw in main
 		// todo add timers
 		try {
 			main(readline, write, print)
@@ -174,37 +173,34 @@ function readFile (fileName) {
 }
 
 function terminate (error) {
-	if (_.isString(error)) {
-		process.stderr.write(error.red)
-		terminate(1)
-	} else if (_.isError(error)) {
-		let [line, pos] = error.stack.match(/<anonymous>\:(\d+\:\d+)/)[1].split(':')
-		process.stderr.write(`\n${error.toString()}\n\tat ${line - 2}:${pos}\n\n`)
-		process.stderr.write(`\n${parseStackTrace(error.stack)}\n\n`)
-		process.stderr.write(error.stack)
+	if (_.isError(error)) {
+		process.stderr.write(formatStackTrace(error.stack))
+		process.exit(1)
+	} else if (arguments.length) {
+		process.stderr.write(util.inspect(error, false, null))
 		process.exit(1)
 	} else {
 		process.exit(0)
 	}
 
-	function parseStackTrace (stackTrace) {
+	function formatStackTrace (stackTrace) {
 		stackTrace = stackTrace.split('\n')
-		const message = stackTrace[0]
+		const message = stackTrace.shift()
 		const codeFilePath = formatCodeFilePath(process.argv[2])
 		const codeFileName = _.last(codeFilePath.split(/\\|\//))
 		let mainStackTrace = stackTrace
-			.filter(RegExp().test.bind(/eval\sat\s<anonymous>.*<anonymous>\:(\d+\:\d+)/))
+			.filter(/ /.test, /eval\sat\s<anonymous>.*<anonymous>\:(\d+\:\d+)/)
 			.map(line => [
 				line.match(/at\s([^\s]+)/)[1],
+				'at',
 				line.match(/<anonymous>\:(\d+\:\d+)/)[1].split(':')])
 
-		const topLevelTrace = mainStackTrace.pop()
-		mainStackTrace = mainStackTrace.map(([fName, [line, pos]]) => `\t${line - 2}:${pos}  at  ${fName}`)
-		mainStackTrace.push(`\t${topLevelTrace[1][0] - 2}:${topLevelTrace[1][1]}  in  ${codeFileName}`)
-
-		//_.last(mainStackTrace)[0] = codeFileName
-		//mainStackTrace = mainStackTrace.map(([fName, [line, pos]]) => `\t${line - 2}:${pos}  at  ${fName}`)
-		//mainStackTrace[mainStackTrace.length - 1] = mainStackTrace[mainStackTrace.length - 1].replace('at', 'in')
+		_.last(mainStackTrace)[0] = codeFileName
+		_.last(mainStackTrace)[1] = 'in'
+		const nfNamesMaxLength = _(mainStackTrace).map(0).map('length').max()
+		mainStackTrace = mainStackTrace.map(([fn, article, [line, pos]]) =>
+			`\t${_.padRight(fn, nfNamesMaxLength)}  ${article}  ${line - 2}:${pos}`
+		)
 		mainStackTrace.unshift(message)
 		return mainStackTrace.join('\n')
 	}
