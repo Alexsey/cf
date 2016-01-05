@@ -108,11 +108,11 @@ function runTests (main, tests, params) {
 		const print = str => actual += str + '\n'
 
 		// todo add timers
+		// todo add parameter to log only from failed test (by faking console.log)
 		try {
 			main(readline, write, print)
 		} catch (e) {terminate(e)}
 
-		// todo may be support some extra character for output to just print the result?
 		let emptyResultExpected = test.expectation == (params.e || '@')
 		if (emptyResultExpected) {
 			if (actual != '')
