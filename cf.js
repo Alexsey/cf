@@ -113,15 +113,22 @@ function runTests (main, tests, params) {
 		} catch (e) {terminate(e)}
 
 		// todo may be support some extra character for output to just print the result?
-		// todo add special char for empty expectation
-		if (!actual.endsWith('\n')) {
+		let emptyResultExpected = test.expectation == (params.e || '@')
+		if (emptyResultExpected) {
+			if (actual != '')
+				failedTests.push({
+					actual: actual.trim() || 'some space characters',
+					expectation: 'empty result expected',
+					input: test.input
+				})
+		} else if (!actual.endsWith('\n')) {
 			failedTests.push({
 				actual: actual.trim(),
 				expectation: 'test output must ends with \\n',
 				input: test.input
 			})
-		} else if ([+params.e, +test.expectation, +actual].every(_.isFinite)
-			? Math.abs(test.expectation - actual) >= Math.pow(10, -params.e)
+		} else if ([+params.p, +test.expectation, +actual].every(_.isFinite)
+			? Math.abs(test.expectation - actual) >= Math.pow(10, -params.p)
 			: actual != test.expectation + '\n'
 		) {
 			failedTests.push({
@@ -134,12 +141,12 @@ function runTests (main, tests, params) {
 }
 
 function printWarnings (code, ranTests, failedTests, testsQuantity, params) {
-	const validParams = ['e']
+	const validParams = ['p', 'e']
 	const unknownParams = _.difference(_.keys(params), validParams)
 	if (unknownParams.length)
 		console.log((`unknown parameter${sForPlural(unknownParams)}: ` +
 			`${unknownParams.join(', ')}\n`).cyan.bold)
-	if (!_.isFinite(+params.e))
+	if (!_.isFinite(+params.p))
 		console.log('parameter `e` should be number\n'.cyan.bold)
 	if (!failedTests.length && code.includes('console.log'))
 		console.log('console.log\n'.yellow.bold)
