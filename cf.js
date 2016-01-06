@@ -119,7 +119,7 @@ function runTests (main, tests, params) {
 					expectation: 'empty result expected',
 					input: test.input
 				})
-		} else if (!actual.endsWith('\n')) {
+		} else if (actual && !actual.endsWith('\n')) {
 			failedTests.push({
 				actual: actual.trim(),
 				expectation: 'test output must ends with \\n',
