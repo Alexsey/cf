@@ -83,20 +83,21 @@ function parseTestsFile () {
 	}
 
 	function parseParams (paramsLine = '') {
-		return _(_(paramsLine)               // ' n   e =2 '
-			.split('=')                        // [' n   e ', '2 ']
-			.invoke('trim')                    // ['n   e', '2']
-			.join('=')                         // ['n   e=2']
-			.split(' ')                        // ['n', '', '', 'e=2']
-			.filter(Boolean)                   // ['n', 'e=2']
-			.map(p => p.split('='))            // [['n'], ['e', '2']]
-			.map(p => [p[0], p[1] || true]))   // [['n', true], ['e', '2']]
-		  .zipObject()                       // {n: true, e: 2}
+		return _(_(paramsLine)               // ' n   p =2 '
+			.split('=')                        // [' n   p ', '2 ']
+			.invoke('trim')                    // ['n   p', '2']
+			.join('=')                         // ['n   p=2']
+			.split(' ')                        // ['n', '', '', 'p=2']
+			.filter(Boolean)                   // ['n', 'p=2']
+			.map(p => p.split('='))            // [['n'], ['p', '2']]
+			.map(p => [p[0], p[1] || true]))   // [['n', true], ['p', '2']
+			.zipObject()                       // {n: true, p: 2}
 			.value()
 	}
 }
 
 function runTests (main, tests, params) {
+	let emptyResultSymbol = params['@'] !== true && params['@'] || '@'
 	return _.transform(tests, (failedTests, test) => {
 		let actual = ''
 		const input = test.input.split('\n').reverse()
@@ -110,7 +111,7 @@ function runTests (main, tests, params) {
 			main(readline, write, print)
 		} catch (e) {terminate(e)}
 
-		let emptyResultExpected = test.expectation == (params.e || '@')
+		let emptyResultExpected = test.expectation == emptyResultSymbol
 		if (emptyResultExpected) {
 			if (actual != '')
 				failedTests.push({
@@ -138,13 +139,16 @@ function runTests (main, tests, params) {
 }
 
 function printWarnings (code, ranTests, failedTests, testsQuantity, params) {
-	const validParams = ['p', 'e']
+	const validParams = ['p', '@']
 	const unknownParams = _.difference(_.keys(params), validParams)
 	if (unknownParams.length)
 		console.log((`unknown parameter${sForPlural(unknownParams)}: ` +
 			`${unknownParams.join(', ')}\n`).cyan.bold)
-	if (!_.isFinite(+params.p))
-		console.log('parameter `e` should be number\n'.cyan.bold)
+	if ('p' in params && !_.isFinite(+params.p))
+		console.log('parameter `p` should be number\n'.cyan.bold)
+	if ('@' in params && params['@'] === true) {
+		console.log('parameter `@` should have a value\n'.cyan.bold)
+	}
 	if (!failedTests.length && code.includes('console.log'))
 		console.log('console.log\n'.yellow.bold)
 	if (!failedTests.length && ranTests.length < testsQuantity)
