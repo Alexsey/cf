@@ -160,7 +160,7 @@ function printWarnings (code, ranTests, failedTests, testsQuantity, params) {
 }
 
 function printFailedResults (failedTests) {
-	failedTests.forEach(failedTest => {
+	failedTests.forEach((failedTest, i) => {
 		const expectations = failedTest.expectation.split('\n').reverse()
 		const actuals      = failedTest.actual     .split('\n').reverse()
 		const inputs       = failedTest.input      .split('\n').reverse()
@@ -177,6 +177,7 @@ function printFailedResults (failedTests) {
 			_(expectations.pop()).padRight(expectationWidth).green.bold +
 		   (actuals.pop()     ).red.bold
 		))
+		if (i != failedTests.length - 1) console.log()
 	})
 }
 
