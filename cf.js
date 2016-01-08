@@ -105,12 +105,12 @@ function runTests (main, tests, params) {
 		const write = str => actual += str
 		const print = str => actual += str + '\n'
 
-		// todo add timers
 		// todo add parameter to log only from failed test (by faking console.log)
 		try {
 			main(readline, write, print)
 		} catch (e) {terminate(e)}
 
+		// todo add parameter to stop run on first failed test
 		let emptyResultExpected = test.expectation == emptyResultSymbol
 		if (emptyResultExpected) {
 			if (actual != '')
@@ -146,9 +146,8 @@ function printWarnings (code, ranTests, failedTests, testsQuantity, params) {
 			`${unknownParams.join(', ')}\n`).cyan.bold)
 	if ('p' in params && !_.isFinite(+params.p))
 		console.log('parameter `p` should be number\n'.cyan.bold)
-	if ('@' in params && params['@'] === true) {
+	if ('@' in params && params['@'] === true)
 		console.log('parameter `@` should have a value\n'.cyan.bold)
-	}
 	if (!failedTests.length && code.includes('console.log'))
 		console.log('console.log\n'.yellow.bold)
 	if (!failedTests.length && ranTests.length < testsQuantity)
@@ -160,7 +159,7 @@ function printWarnings (code, ranTests, failedTests, testsQuantity, params) {
 }
 
 function printFailedResults (failedTests) {
-	failedTests.forEach((failedTest, i) => {
+	process.stdout.write(failedTests.map(failedTest => {
 		const expectations = failedTest.expectation.split('\n').reverse()
 		const actuals      = failedTest.actual     .split('\n').reverse()
 		const inputs       = failedTest.input      .split('\n').reverse()
@@ -172,13 +171,12 @@ function printFailedResults (failedTests) {
 		const expectationWidth = _(expectations).map('length').max() + 3
 		const inputWidth       = _(inputs)      .map('length').max() + 3
 
-		_.times(outputHeight, () => console.log(
+		return _.times(outputHeight, () =>
 			_(inputs.pop()      ).padRight(inputWidth).yellow.bold +
 			_(expectations.pop()).padRight(expectationWidth).green.bold +
 		   (actuals.pop()     ).red.bold
-		))
-		if (i != failedTests.length - 1) console.log()
-	})
+		).join('\n')
+	}).join('\n\n'))
 }
 
 function formatCodeFilePath (codeFilePath) {
