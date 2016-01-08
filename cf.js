@@ -10,6 +10,7 @@ const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 
 
 const code = readCodeFile()
+//todo handle parse errors
 const main = new Function ('readline', 'write', 'print', code)
 const {testsToRun, testsQuantity, params} = parseTestsFile()
 const failedTests = runTests(main, testsToRun, params)
@@ -43,8 +44,6 @@ function parseTestsFile () {
 		|| readFile('tests')
 		|| readFile('test')
 
-	// todo read tests from code file
-
 	if (!testsStr) terminate('file with tests not found')
 
 	const paragraphs = testsStr.trim().split(/\s*[\n\s*]{2,}/g)
@@ -66,6 +65,7 @@ function parseTestsFile () {
 
 		const {testsRunOnly, testsCommon} = _.groupBy(tests, v => {
 			switch (v.input[0]) {
+				//todo read '+' and '-' from props
 				case '+':	return 'testsRunOnly'
 				case '-': return 'testsSkip'
 				default : return 'testsCommon'
@@ -97,8 +97,10 @@ function parseTestsFile () {
 }
 
 function runTests (main, tests, params) {
-	let emptyResultSymbol = params['@'] !== true && params['@'] || '@'
+	const emptyResultSymbol = params['@'] !== true && params['@'] || '@'
 	return _.transform(tests, (failedTests, test) => {
+		if (params.f && failedTests.length) return false
+
 		let actual = ''
 		const input = test.input.split('\n').reverse()
 		const readline = () => input.pop()
@@ -106,12 +108,9 @@ function runTests (main, tests, params) {
 		const print = str => actual += str + '\n'
 
 		// todo add parameter to log only from failed test (by faking console.log)
-		try {
-			main(readline, write, print)
-		} catch (e) {terminate(e)}
+		try {main(readline, write, print)} catch (e) {terminate(e)}
 
-		// todo add parameter to stop run on first failed test
-		let emptyResultExpected = test.expectation == emptyResultSymbol
+		const emptyResultExpected = test.expectation == emptyResultSymbol
 		if (emptyResultExpected) {
 			if (actual != '')
 				failedTests.push({
@@ -139,7 +138,7 @@ function runTests (main, tests, params) {
 }
 
 function printWarnings (code, ranTests, failedTests, testsQuantity, params) {
-	const validParams = ['p', '@']
+	const validParams = ['p', '@', 'f']
 	const unknownParams = _.difference(_.keys(params), validParams)
 	if (unknownParams.length)
 		console.log((`unknown parameter${sForPlural(unknownParams)}: ` +
@@ -148,6 +147,8 @@ function printWarnings (code, ranTests, failedTests, testsQuantity, params) {
 		console.log('parameter `p` should be number\n'.cyan.bold)
 	if ('@' in params && params['@'] === true)
 		console.log('parameter `@` should have a value\n'.cyan.bold)
+	if ('f' in params && params['f'] !== true)
+		console.log('parameter `f` should have no value\n'.cyan.bold)
 	if (!failedTests.length && code.includes('console.log'))
 		console.log('console.log\n'.yellow.bold)
 	if (!failedTests.length && ranTests.length < testsQuantity)
@@ -204,20 +205,21 @@ function terminate (error) {
 		const message = stackTrace.shift()
 		const codeFilePath = formatCodeFilePath(process.argv[2])
 		const codeFileName = _.last(codeFilePath.split(/\\|\//))
-		let mainStackTrace = stackTrace
-			.filter(/ /.test, /eval\sat\s<anonymous>.*<anonymous>\:(\d+\:\d+)/)
+		const mainStackTrace = stackTrace
+			.filter(/ /.test, /eval\sat\s<anonymous>.*<anonymous>:(\d+:\d+)/)
 			.map(line => [
 				line.match(/at\s([^\s]+)/)[1],
 				'at',
-				line.match(/<anonymous>\:(\d+\:\d+)/)[1].split(':')])
+				line.match(/<anonymous>:(\d+:\d+)/)[1].split(':')])
 
-		_.last(mainStackTrace)[0] = codeFileName
-		_.last(mainStackTrace)[1] = 'in'
-		const nfNamesMaxLength = _(mainStackTrace).map(0).map('length').max()
-		mainStackTrace = mainStackTrace.map(([fn, article, [line, pos]]) =>
-			`\t${_.padRight(fn, nfNamesMaxLength)}  ${article}  ${line - 2}:${pos}`
+		_(mainStackTrace).last()[0] = codeFileName
+		_(mainStackTrace).last()[1] = 'in'
+		const fnNamesMaxLength = _(mainStackTrace).map(0).map('length').max()
+		const formattedMainStackTrace = mainStackTrace.map(
+			([fn, article, [line, pos]]) =>
+				`\t${_.padRight(fn, fnNamesMaxLength)}  ${article}  ${line - 2}:${pos}`
 		)
-		mainStackTrace.unshift(message)
-		return mainStackTrace.join('\n')
+		formattedMainStackTrace.unshift(message)
+		return formattedMainStackTrace.join('\n')
 	}
 }
