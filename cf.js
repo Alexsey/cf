@@ -98,8 +98,10 @@ function parseTestsFile () {
 
 function runTests (main, tests, params) {
   const emptyResultSymbol = params['@'] !== true && params['@'] || '@'
+	// todo save logs to test results so they could be output later
   return _.transform(tests, (failedTests, test) => {
-    if (params.f && failedTests.length) return false
+		const nativeLog = console.log
+		const logs = []
 
     let actual = ''
     const input = test.input.split('\n').reverse()
@@ -107,19 +109,27 @@ function runTests (main, tests, params) {
     const write = str => actual += str
     const print = str => actual += str + '\n'
 
-    // todo add parameter to log only from failed test (by faking console.log)
-    try {main(readline, write, print)} catch (e) {terminate(e)}
+		console.log = (...args) => logs.push([...args])
+    try {
+			main(readline, write, print)
+		}	catch (e) {
+			console.log = nativeLog
+			console.log(_(logs).invoke('join', ' ').join('\n'), '\n=*='.bold.cyan)
+			terminate(e)
+		}
+		console.log = nativeLog
 
+		let testFailed = false
     const emptyResultExpected = test.expectation == emptyResultSymbol
     if (emptyResultExpected) {
       if (actual)
-        failedTests.push({
+				testFailed = failedTests.push({
           actual: actual.trim() || 'some space characters',
           expectation: 'empty result expected',
           input: test.input
         })
     } else if (actual && !actual.endsWith('\n')) {
-      failedTests.push({
+			testFailed = failedTests.push({
         actual: actual.trim(),
         expectation: 'test output must ends with \\n',
         input: test.input
@@ -128,27 +138,35 @@ function runTests (main, tests, params) {
       ? Math.abs(test.expectation - actual) >= Math.pow(10, -params.p)
       : actual != test.expectation + '\n'
     ) {
-      failedTests.push({
+			testFailed = failedTests.push({
         actual: actual.trim(),
         expectation: test.expectation,
         input: test.input
       })
     }
+
+		// todo add parameter for custom log separator
+		if (testFailed || !params.l)
+			console.log(_(logs).invoke('join', ' ').join('\n'), '\n=*='.bold.cyan)
+		if (testFailed && params.f) return false
   })
 }
 
+// todo spread to warnings based on parameters (can be checked before test run) and others
 function printWarnings (code, ranTests, failedTests, testsQuantity, params) {
-  const validParams = ['p', '@', 'f']
+  const validParams = ['p', 'f', 'l', '@']
   const unknownParams = _.difference(_.keys(params), validParams)
   if (unknownParams.length)
     console.log((`unknown parameter${sForPlural(unknownParams)}: ` +
       `${unknownParams.join(', ')}\n`).cyan.bold)
   if ('p' in params && !_.isFinite(+params.p))
     console.log('parameter `p` should be number\n'.cyan.bold)
-  if ('@' in params && params['@'] === true)
-    console.log('parameter `@` should have a value\n'.cyan.bold)
-  if ('f' in params && params['f'] !== true)
-    console.log('parameter `f` should have no value\n'.cyan.bold)
+	if ('f' in params && params['f'] !== true)
+		console.log('parameter `f` should have no value\n'.cyan.bold)
+  if ('l' in params && params['l'] !== true)
+    console.log('parameter `l` should have no value\n'.cyan.bold)
+	if ('@' in params && params['@'] === true)
+		console.log('parameter `@` should have a value\n'.cyan.bold)
   if (!failedTests.length && code.includes('console.log'))
     console.log('console.log\n'.yellow.bold)
   if (!failedTests.length && ranTests.length < testsQuantity)
