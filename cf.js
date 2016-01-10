@@ -13,8 +13,9 @@ const code = readCodeFile()
 // todo handle parse errors
 const main = new Function('readline', 'write', 'print', code)
 const {testsToRun, testsQuantity, params} = parseTestsFile()
+printParamsWarnings(params)
 const failedTests = runTests(main, testsToRun, params)
-printWarnings(code, testsToRun, failedTests, testsQuantity, params)
+printWarnings(code, testsToRun, failedTests, testsQuantity)
 printFailedResults(failedTests)
 
 
@@ -50,10 +51,11 @@ function parseTestsFile () {
   const testParagraphs = paragraphs.slice(paragraphs.length % 2)
   const paramsLine = paragraphs.slice(0, paragraphs.length % 2)[0]
 
-  const tests = parseTests(testParagraphs)
-  const params = parseParams(paramsLine)
+	const params = parseParams(paramsLine)
+	setDefaultParams(params)
+  const tests = parseTests(testParagraphs, params)
 
-  return {
+	return {
     testsToRun: tests.testsToRun,
     testsQuantity: tests.testsQuantity,
     params
@@ -65,9 +67,8 @@ function parseTestsFile () {
 
     const {testsRunOnly, testsCommon} = _.groupBy(tests, v => {
       switch (v.input[0]) {
-        // todo read '+' and '-' from props
-        case '+': return 'testsRunOnly'
-        case '-': return 'testsSkip'
+        case params['+']: return 'testsRunOnly'
+        case params['-']: return 'testsSkip'
         default : return 'testsCommon'
       }
     })
@@ -83,102 +84,91 @@ function parseTestsFile () {
   }
 
   function parseParams (paramsLine = '') {
-    return _(_(paramsLine)               // ' n   p =2 '
-      .split('=')                        // [' n   p ', '2 ']
-      .invoke('trim')                    // ['n   p', '2']
-      .join('=')                         // ['n   p=2']
-      .split(' ')                        // ['n', '', '', 'p=2']
-      .filter(Boolean)                   // ['n', 'p=2']
-      .map(p => p.split('='))            // [['n'], ['p', '2']]
-      .map(p => [p[0], p[1] || true]))   // [['n', true], ['p', '2']
-      .zipObject()                       // {n: true, p: 2}
-      .value()
+    return _(_(paramsLine)               // ' p =2    n '
+      .split('=')                        // [' p ', '2    n ']
+      .invoke('trim')                    // ['p', '2    n']
+      .join('=')                         // ['p=2    n']
+      .split(' ')                        // ['p=2', '', '', '', '', 'n']
+      .filter(Boolean)                   // ['p=2', 'n']
+      .map(p => p.split('='))            // [['p', '2'], ['n']]
+      .map(p => [p[0], p[1]]))           // [['p', '2'], ['n', undefined]]
+      .zipObject()                       // {p: 2, n: undefined}
+      .value() || {}
   }
+
+	function setDefaultParams (params) {
+		_.defaults(params, {'@': '@', '+': '+', '-': '-', 's': '=*='})
+		if ('f' in params) params.f = true
+		if ('l' in params) params.l = true
+		params.s = params.s.bold.cyan
+	}
+}
+
+function printParamsWarnings (params) {
+	const validParams = ['p', 'f', 'l', 's', '@', '+', '-']
+	const unknownParams = _.difference(_.keys(params), validParams)
+	if (unknownParams.length)
+		console.log((`unknown parameter${sForPlural(unknownParams)}: ` +
+		`${unknownParams.join(', ')}\n`).cyan.bold)
+	if ('p' in params && !_.isFinite(+params.p))
+		console.log('parameter `p` should be a number\n'.cyan.bold)
+
+	function sForPlural (arr) {
+		return arr.length > 1 ? 's' : ''
+	}
 }
 
 function runTests (main, tests, params) {
-  const emptyResultSymbol = params['@'] !== true && params['@'] || '@'
-	// todo save logs to test results so they could be output later
-  return _.transform(tests, (failedTests, test) => {
-		const nativeLog = console.log
-		const logs = []
-
-    let actual = ''
-    const input = test.input.split('\n').reverse()
-    const readline = () => input.pop()
+	const nativeLog = console.log
+  return _(_(tests).cloneDeep()).transform((testsResults, testResult) => {
+		testsResults.push(testResult)
+		const logs = testResult.logs = []
+		console.log = (...args) => logs.push([...args])
+		const {input, expectation} = testResult
+		let actual = ''
+    const inputByLine = input.split('\n').reverse()
+    const readline = () => inputByLine.pop()
     const write = str => actual += str
     const print = str => actual += str + '\n'
 
-		console.log = (...args) => logs.push([...args])
     try {
 			main(readline, write, print)
 		}	catch (e) {
 			console.log = nativeLog
-			console.log(_(logs).invoke('join', ' ').join('\n'), '\n=*='.bold.cyan)
+			console.log(_(logs).invoke('join', ' ').join('\n'), '\n')
 			terminate(e)
 		}
 		console.log = nativeLog
 
-		let testFailed = false
-    const emptyResultExpected = test.expectation == emptyResultSymbol
-    if (emptyResultExpected) {
-      if (actual)
-				testFailed = failedTests.push({
-          actual: actual.trim() || 'some space characters',
-          expectation: 'empty result expected',
-          input: test.input
-        })
+    if (expectation == params['@']) { // expect empty output
+			if (actual) {
+				testResult.isSuccess = false
+				testResult.expectation = 'empty result expected'
+			}
     } else if (actual && !actual.endsWith('\n')) {
-			testFailed = failedTests.push({
-        actual: actual.trim(),
-        expectation: 'test output must ends with \\n',
-        input: test.input
-      })
-    } else if ([+params.p, +test.expectation, +actual].every(_.isFinite)
-      ? Math.abs(test.expectation - actual) >= Math.pow(10, -params.p)
-      : actual != test.expectation + '\n'
+			testResult.isSuccess = false
+			testResult.expectation = 'test output must ends with \\n'
+		} else if (params.p && [+expectation, +actual].every(_.isFinite)
+      ? Math.abs(expectation - actual) >= Math.pow(10, -params.p)
+      : actual != expectation + '\n'
     ) {
-			testFailed = failedTests.push({
-        actual: actual.trim(),
-        expectation: test.expectation,
-        input: test.input
-      })
+			testResult.isSuccess = false
     }
+		testResult.actual = actual.replace(/\n$/, '')
 
-		// todo add parameter for custom log separator
-		if (testFailed || !params.l)
-			console.log(_(logs).invoke('join', ' ').join('\n'), '\n=*='.bold.cyan)
-		if (testFailed && params.f) return false
-  })
+		if (!testResult.isSuccess && params.f) return false
+  }).value()
 }
 
-// todo spread to warnings based on parameters (can be checked before test run) and others
-function printWarnings (code, ranTests, failedTests, testsQuantity, params) {
-  const validParams = ['p', 'f', 'l', '@']
-  const unknownParams = _.difference(_.keys(params), validParams)
-  if (unknownParams.length)
-    console.log((`unknown parameter${sForPlural(unknownParams)}: ` +
-      `${unknownParams.join(', ')}\n`).cyan.bold)
-  if ('p' in params && !_.isFinite(+params.p))
-    console.log('parameter `p` should be number\n'.cyan.bold)
-	if ('f' in params && params['f'] !== true)
-		console.log('parameter `f` should have no value\n'.cyan.bold)
-  if ('l' in params && params['l'] !== true)
-    console.log('parameter `l` should have no value\n'.cyan.bold)
-	if ('@' in params && params['@'] === true)
-		console.log('parameter `@` should have a value\n'.cyan.bold)
+function printWarnings (code, ranTests, failedTests, testsQuantity) {
   if (!failedTests.length && code.includes('console.log'))
     console.log('console.log\n'.yellow.bold)
   if (!failedTests.length && ranTests.length < testsQuantity)
     console.log(`${ranTests.length} of ${testsQuantity}`.green.bold)
-
-  function sForPlural (arr) {
-    return arr.length > 1 ? 's' : ''
-  }
 }
 
-function printFailedResults (failedTests) {
-  process.stdout.write(failedTests.map(failedTest => {
+function printFailedResults (testResults) {
+  process.stdout.write(testResults.map(failedTest => {
     const expectations = failedTest.expectation.split('\n').reverse()
     const actuals      = failedTest.actual     .split('\n').reverse()
     const inputs       = failedTest.input      .split('\n').reverse()
@@ -194,6 +184,7 @@ function printFailedResults (failedTests) {
       _(inputs.pop()).padRight(inputWidth).yellow.bold +
       _(expectations.pop()).padRight(expectationWidth).green.bold +
        (actuals.pop()).red.bold
+			// todo add separator after success tests with output
     ).join('\n')
   }).join('\n\n'))
 }
