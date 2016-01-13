@@ -14,9 +14,9 @@ const code = readCodeFile()
 const main = new Function('readline', 'write', 'print', code)
 const {testsToRun, testsQuantity, params} = parseTestsFile()
 printParamsWarnings(params)
-const failedTests = runTests(main, testsToRun, params)
-printWarnings(code, testsToRun, failedTests, testsQuantity)
-printFailedResults(failedTests)
+const testsResults = runTests(main, testsToRun, params)
+printWarnings(code, testsResults, testsQuantity)
+printTestsResults(testsResults)
 
 
 function readCodeFile () {
@@ -122,6 +122,7 @@ function runTests (main, tests, params) {
 	const nativeLog = console.log
   return _(_(tests).cloneDeep()).transform((testsResults, testResult) => {
 		testsResults.push(testResult)
+		testResult.isSuccess = true
 		const logs = testResult.logs = []
 		console.log = (...args) => logs.push([...args])
 		const {input, expectation} = testResult
@@ -160,18 +161,23 @@ function runTests (main, tests, params) {
   }).value()
 }
 
-function printWarnings (code, ranTests, failedTests, testsQuantity) {
-  if (!failedTests.length && code.includes('console.log'))
-    console.log('console.log\n'.yellow.bold)
-  if (!failedTests.length && ranTests.length < testsQuantity)
-    console.log(`${ranTests.length} of ${testsQuantity}`.green.bold)
+function printWarnings (code, testResult, testsQuantity, params) {
+	if (!_.every(testResult, 'isSuccess')) return
+  if (code.includes('console.log')) console.log('console.log\n'.yellow.bold)
+  if (testResult.length < testsQuantity)
+		console.log(`${testResult.length} of ${testsQuantity}`.green.bold)
 }
 
-function printFailedResults (testResults) {
-  process.stdout.write(testResults.map(failedTest => {
-    const expectations = failedTest.expectation.split('\n').reverse()
-    const actuals      = failedTest.actual     .split('\n').reverse()
-    const inputs       = failedTest.input      .split('\n').reverse()
+function printTestsResults (testResults) {
+	(_.findLast(testResults, testResult =>
+			testResult.logs.length || !testResult.isSuccess)
+	|| testResults[0]).lastOutput = true
+
+  process.stdout.write(testResults.map(testResult => {
+		const logs = _(testResult.logs).invoke('join', ' ').join('\n')
+    const expectations = testResult.expectation.split('\n').reverse()
+    const actuals      = testResult.actual     .split('\n').reverse()
+    const inputs       = testResult.input      .split('\n').reverse()
 
     const outputHeight = _([expectations, actuals, inputs]).map('length').max()
     const pad = a => a.fill('', a.length, a.length = outputHeight)
@@ -180,13 +186,19 @@ function printFailedResults (testResults) {
     const expectationWidth = _(expectations).map('length').max() + 3
     const inputWidth       = _(inputs)      .map('length').max() + 3
 
-    return _.times(outputHeight, () =>
-      _(inputs.pop()).padRight(inputWidth).yellow.bold +
-      _(expectations.pop()).padRight(expectationWidth).green.bold +
-       (actuals.pop()).red.bold
-			// todo add separator after success tests with output
-    ).join('\n')
-  }).join('\n\n'))
+    return [logs, testResult.isSuccess && !testResult.lastOutput && params.s]
+			.concat(!testResult.isSuccess &&	_.times(outputHeight, () =>
+					_(inputs.pop()).padRight(inputWidth).yellow.bold +
+					_(expectations.pop()).padRight(expectationWidth).green.bold +
+					prepareActual(actuals.pop())
+			)).filter(Boolean).join('\n')
+  }).filter(Boolean).join('\n\n'))
+
+	function prepareActual (str) {
+		return (str.match(/^\s*/) || [''])[0].replace(/./g, '\\s').cyan
+			   + str.trim().red.bold
+			   + (str.match(/\s*$/) || [''])[0].replace(/./g, '\\s').cyan
+	}
 }
 
 function formatCodeFilePath (codeFilePath) {
