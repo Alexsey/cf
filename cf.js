@@ -15,7 +15,7 @@ const main = new Function('readline', 'write', 'print', code)
 const {testsToRun, testsQuantity, params} = parseTestsFile()
 printParamsWarnings(params)
 const testsResults = runTests(main, testsToRun, params)
-printWarnings(code, testsResults, testsQuantity)
+printWarnings(code, testsResults, testsQuantity, params)
 printTestsResults(testsResults)
 
 
@@ -100,12 +100,16 @@ function parseTestsFile () {
 		_.defaults(params, {'@': '@', '+': '+', '-': '-', 's': '=*='})
 		if ('f' in params) params.f = true
 		if ('l' in params) params.l = true
+		if ('k' in params) {
+			if (!params.k) params.k = 'OK!'
+			params.k = params.k.green.bold
+		}
 		params.s = params.s.bold.cyan
 	}
 }
 
 function printParamsWarnings (params) {
-	const validParams = ['p', 'f', 'l', 's', '@', '+', '-']
+	const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k']
 	const unknownParams = _.difference(_.keys(params), validParams)
 	if (unknownParams.length)
 		console.log((`unknown parameter${sForPlural(unknownParams)}: ` +
@@ -164,8 +168,9 @@ function runTests (main, tests, params) {
 function printWarnings (code, testResult, testsQuantity, params) {
 	if (!_.every(testResult, 'isSuccess')) return
   if (code.includes('console.log')) console.log('console.log\n'.yellow.bold)
-  if (testResult.length < testsQuantity)
+  if (testResult.length < testsQuantity) {
 		console.log(`${testResult.length} of ${testsQuantity}`.green.bold)
+	} else if (params.k) {console.log(params.k)}
 }
 
 function printTestsResults (testResults) {
