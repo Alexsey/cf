@@ -84,15 +84,15 @@ function parseTestsFile () {
   }
 
   function parseParams (paramsLine = '') {
-    return _(_(paramsLine)               // ' p =2    n '
-      .split('=')                        // [' p ', '2    n ']
-      .invoke('trim')                    // ['p', '2    n']
-      .join('=')                         // ['p=2    n']
-      .split(' ')                        // ['p=2', '', '', '', '', 'n']
-      .filter(Boolean)                   // ['p=2', 'n']
-      .map(p => p.split('='))            // [['p', '2'], ['n']]
-      .map(p => [p[0], p[1]]))           // [['p', '2'], ['n', undefined]]
-      .zipObject()                       // {p: 2, n: undefined}
+    return _(_(paramsLine)                                  // ' k =all\sdone!    n '
+      .split('=')                                           // [' p ', 'all\sdone!    n ']
+      .invoke('trim')                                       // ['p', 'all\sdone!    n']
+      .join('=')                                            // ['p=all\sdone!    n']
+      .split(' ')                                           // ['p=all\sdone!', '', '', '', '', 'n']
+      .filter(Boolean)                                      // ['p=all\sdone!', 'n']
+      .map(p => p.split('='))                               // [['p', 'all\sdone!'], ['n']]
+      .map(p => [p[0], p[1] && p[1].replace(/\\s/g, ' ')])) // [['p', 'all done!'], ['n', undefined]]
+      .zipObject()                                          // {p: 'all done!', n: undefined}
       .value() || {}
   }
 
