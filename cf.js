@@ -5,7 +5,7 @@ const path = require('path')
 const util = require('util')
 
 process.stdout.isTTY = true // some terminals need this to enable color output
-require('colors')
+require('colors').enabled = true
 const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 
 
