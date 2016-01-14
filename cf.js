@@ -81,15 +81,17 @@ function parseTestsFile () {
   }
 
   function parseParams (paramsLine = '') {
-    return _(_(paramsLine)                                  // ' k =all\sdone!    n '
-      .split('=')                                           // [' p ', 'all\sdone!    n ']
-      .invoke('trim')                                       // ['p', 'all\sdone!    n']
-      .join('=')                                            // ['p=all\sdone!    n']
-      .split(' ')                                           // ['p=all\sdone!', '', '', '', '', 'n']
-      .filter(Boolean)                                      // ['p=all\sdone!', 'n']
-      .map(p => p.split('='))                               // [['p', 'all\sdone!'], ['n']]
-      .map(p => [p[0], p[1] && p[1].replace(/\\s/g, ' ')])) // [['p', 'all done!'], ['n', undefined]]
-      .zipObject()                                          // {p: 'all done!', n: undefined}
+    return _(_(paramsLine)    // ' k =all\sdone!    n '
+      .split('=')             // [' p ', 'all\sdone!    n ']
+      .invoke('trim')         // ['p', 'all\sdone!    n']
+      .join('=')              // ['p=all\sdone!    n']
+      .split(' ')             // ['p=all\sdone!', '', '', '', '', 'n']
+      .filter(Boolean)        // ['p=all\sdone!', 'n']
+      .map(p => p.split('=')) // [['p', 'all\sdone!'], ['n']]
+      .map(p => [p[0], p[1]   // [['p', 'all done!'], ['n', undefined]]
+        && p[1].replace(/\\n/g, '\n')
+               .replace(/\\s/g, ' ')]))
+      .zipObject()            // {p: 'all done!', n: undefined}
       .value() || {}
   }
 
