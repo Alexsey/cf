@@ -4,13 +4,12 @@ const fs = require('fs')
 const path = require('path')
 const util = require('util')
 
-process.stdout.isTTY = true // some terminals need this to enable color output
-require('colors').enabled = true
+process.stdout.isTTY = true // some terminals need this
+require('colors').enabled = true // and/or this to enable color output
 const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 
 
 const code = readCodeFile()
-// todo mention in docs that I will not handle parsing errors because can't do it properly (ex. add single { in code)
 const main = new Function('readline', 'write', 'print', code)
 const {testsToRun, testsQuantity, params} = parseTestsFile()
 printParamsWarnings(params)
@@ -38,7 +37,6 @@ function readCodeFile () {
 function parseTestsFile () {
   const testFilePath = process.argv[3]
   const codeFilePath = formatCodeFilePath(process.argv[2])
-  // may be I will read test files async with async/await. May be
   const testsStr = readFile(testFilePath)
     || readFile(codeFilePath.slice(0, -3)) // 1A.js -> 1A
     || readFile(codeFilePath.slice(0, -2) + 'test') // 1A.js -> 1A.test
