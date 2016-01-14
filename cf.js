@@ -51,8 +51,7 @@ function parseTestsFile () {
   const testParagraphs = paragraphs.slice(paragraphs.length % 2)
   const paramsLine = paragraphs.slice(0, paragraphs.length % 2)[0]
 
-	const params = parseParams(paramsLine)
-	setDefaultParams(params)
+	const params = setDefaultParams(parseParams(paramsLine))
   const tests = parseTests(testParagraphs, params)
 
 	return {
@@ -61,7 +60,7 @@ function parseTestsFile () {
     params
   }
 
-  function parseTests (paragraphs) {
+  function parseTests (paragraphs, params) {
     const tests = _.chunk(paragraphs, 2)
       .map(([input, expectation]) => ({input, expectation}))
 
@@ -105,6 +104,7 @@ function parseTestsFile () {
 			params.k = params.k.green.bold
 		}
 		params.s = params.s.bold.cyan
+		return params
 	}
 }
 
