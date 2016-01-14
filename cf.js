@@ -178,7 +178,7 @@ function printTestsResults (testResults) {
 			testResult.logs.length || !testResult.isSuccess)
 	|| testResults[0]).lastOutput = true
 
-  process.stdout.write(testResults.map(testResult => {
+  console.log(testResults.map(testResult => {
 		const logs = _(testResult.logs).invoke('join', ' ').join('\n')
     const expectations = testResult.expectation.split('\n').reverse()
     const actuals      = testResult.actual     .split('\n').reverse()
@@ -191,12 +191,13 @@ function printTestsResults (testResults) {
     const expectationWidth = _(expectations).map('length').max() + 3
     const inputWidth       = _(inputs)      .map('length').max() + 3
 
-    return [logs, testResult.isSuccess && !testResult.lastOutput && params.s]
-			.concat(!testResult.isSuccess &&	_.times(outputHeight, () =>
-					_(inputs.pop()).padRight(inputWidth).yellow.bold +
-					_(expectations.pop()).padRight(expectationWidth).green.bold +
-					prepareActual(actuals.pop())
-			)).filter(Boolean).join('\n')
+    return [logs,
+			      logs && testResult.isSuccess && !testResult.lastOutput && params.s
+		].concat(!testResult.isSuccess &&	_.times(outputHeight, () =>
+				_(inputs.pop()).padRight(inputWidth).yellow.bold +
+				_(expectations.pop()).padRight(expectationWidth).green.bold +
+				prepareActual(actuals.pop())
+		)).filter(Boolean).join('\n')
   }).filter(Boolean).join('\n\n'))
 
 	function prepareActual (str) {
