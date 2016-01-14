@@ -10,7 +10,7 @@ const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 
 
 const code = readCodeFile()
-// todo handle parse errors
+// todo mention in docs that I will not handle parsing errors because can't do it properly (ex. add single { in code)
 const main = new Function('readline', 'write', 'print', code)
 const {testsToRun, testsQuantity, params} = parseTestsFile()
 printParamsWarnings(params)
