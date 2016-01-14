@@ -49,10 +49,10 @@ function parseTestsFile () {
   const testParagraphs = paragraphs.slice(paragraphs.length % 2)
   const paramsLine = paragraphs.slice(0, paragraphs.length % 2)[0]
 
-	const params = setDefaultParams(parseParams(paramsLine))
+  const params = setDefaultParams(parseParams(paramsLine))
   const tests = parseTests(testParagraphs, params)
 
-	return {
+  return {
     testsToRun: tests.testsToRun,
     testsQuantity: tests.testsQuantity,
     params
@@ -93,91 +93,91 @@ function parseTestsFile () {
       .value() || {}
   }
 
-	function setDefaultParams (params) {
-		_.defaults(params, {'@': '@', '+': '+', '-': '-', 's': '=*='})
-		if ('f' in params) params.f = true
-		if ('l' in params) params.l = true
-		if ('k' in params) {
-			if (!params.k) params.k = 'OK!'
-			params.k = params.k.green.bold
-		}
-		params.s = params.s.bold.cyan
-		return params
-	}
+  function setDefaultParams (params) {
+    _.defaults(params, {'@': '@', '+': '+', '-': '-', 's': '=*='})
+    if ('f' in params) params.f = true
+    if ('l' in params) params.l = true
+    if ('k' in params) {
+      if (!params.k) params.k = 'OK!'
+      params.k = params.k.green.bold
+    }
+    params.s = params.s.bold.cyan
+    return params
+  }
 }
 
 function printParamsWarnings (params) {
-	const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k']
-	const unknownParams = _.difference(_.keys(params), validParams)
-	if (unknownParams.length)
-		console.log((`unknown parameter${sForPlural(unknownParams)}: ` +
-		`${unknownParams.join(', ')}\n`).cyan.bold)
-	if ('p' in params && !_.isFinite(+params.p))
-		console.log('parameter `p` should be a number\n'.cyan.bold)
+  const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k']
+  const unknownParams = _.difference(_.keys(params), validParams)
+  if (unknownParams.length)
+    console.log((`unknown parameter${sForPlural(unknownParams)}: ` +
+    `${unknownParams.join(', ')}\n`).cyan.bold)
+  if ('p' in params && !_.isFinite(+params.p))
+    console.log('parameter `p` should be a number\n'.cyan.bold)
 
-	function sForPlural (arr) {
-		return arr.length > 1 ? 's' : ''
-	}
+  function sForPlural (arr) {
+    return arr.length > 1 ? 's' : ''
+  }
 }
 
 function runTests (main, tests, params) {
-	const nativeLog = console.log
+  const nativeLog = console.log
   return _(_(tests).cloneDeep()).transform((testsResults, testResult) => {
-		testsResults.push(testResult)
-		testResult.isSuccess = true
-		const logs = testResult.logs = []
-		console.log = (...args) => logs.push([...args])
-		const {input, expectation} = testResult
-		let actual = ''
+    testsResults.push(testResult)
+    testResult.isSuccess = true
+    const logs = testResult.logs = []
+    console.log = (...args) => logs.push([...args])
+    const {input, expectation} = testResult
+    let actual = ''
     const inputByLine = input.split('\n').reverse()
     const readline = () => inputByLine.pop()
     const write = str => actual += str
     const print = str => actual += str + '\n'
 
     try {
-			main(readline, write, print)
-		}	catch (e) {
-			console.log = nativeLog
-			console.log(_(logs).invoke('join', ' ').join('\n'), '\n')
-			terminate(e)
-		}
-		console.log = nativeLog
+      main(readline, write, print)
+    }  catch (e) {
+      console.log = nativeLog
+      console.log(_(logs).invoke('join', ' ').join('\n'), '\n')
+      terminate(e)
+    }
+    console.log = nativeLog
 
     if (expectation == params['@']) { // expect empty output
-			if (actual) {
-				testResult.isSuccess = false
-				testResult.expectation = 'empty result expected'
-			}
+      if (actual) {
+        testResult.isSuccess = false
+        testResult.expectation = 'empty result expected'
+      }
     } else if (actual && !actual.endsWith('\n')) {
-			testResult.isSuccess = false
-			testResult.expectation = 'test output must ends with \\n'
-		} else if (params.p && [+expectation, +actual].every(_.isFinite)
+      testResult.isSuccess = false
+      testResult.expectation = 'test output must ends with \\n'
+    } else if (params.p && [+expectation, +actual].every(_.isFinite)
       ? Math.abs(expectation - actual) >= Math.pow(10, -params.p)
       : actual != expectation + '\n'
     ) {
-			testResult.isSuccess = false
+      testResult.isSuccess = false
     }
-		testResult.actual = actual.replace(/\n$/, '')
+    testResult.actual = actual.replace(/\n$/, '')
 
-		if (!testResult.isSuccess && params.f) return false
+    if (!testResult.isSuccess && params.f) return false
   }).value()
 }
 
 function printWarnings (code, testResult, testsQuantity, params) {
-	if (!_.every(testResult, 'isSuccess')) return
+  if (!_.every(testResult, 'isSuccess')) return
   if (code.includes('console.log')) console.log('console.log\n'.yellow.bold)
   if (testResult.length < testsQuantity) {
-		console.log(`${testResult.length} of ${testsQuantity}`.green.bold)
-	} else if (params.k) {console.log(params.k)}
+    console.log(`${testResult.length} of ${testsQuantity}`.green.bold)
+  } else if (params.k) {console.log(params.k)}
 }
 
 function printTestsResults (testResults) {
-	(_.findLast(testResults, testResult =>
-			testResult.logs.length || !testResult.isSuccess)
-	|| testResults[0]).lastOutput = true
+  (_.findLast(testResults, testResult =>
+      testResult.logs.length || !testResult.isSuccess)
+  || testResults[0]).lastOutput = true
 
   console.log(testResults.map(testResult => {
-		const logs = _(testResult.logs).invoke('join', ' ').join('\n')
+    const logs = _(testResult.logs).invoke('join', ' ').join('\n')
     const expectations = testResult.expectation.split('\n').reverse()
     const actuals      = testResult.actual     .split('\n').reverse()
     const inputs       = testResult.input      .split('\n').reverse()
@@ -190,19 +190,19 @@ function printTestsResults (testResults) {
     const inputWidth       = _(inputs)      .map('length').max() + 3
 
     return [logs,
-			      logs && testResult.isSuccess && !testResult.lastOutput && params.s
-		].concat(!testResult.isSuccess &&	_.times(outputHeight, () =>
-				_(inputs.pop()).padRight(inputWidth).yellow.bold +
-				_(expectations.pop()).padRight(expectationWidth).green.bold +
-				prepareActual(actuals.pop())
-		)).filter(Boolean).join('\n')
+            logs && testResult.isSuccess && !testResult.lastOutput && params.s
+    ].concat(!testResult.isSuccess &&  _.times(outputHeight, () =>
+        _(inputs.pop()).padRight(inputWidth).yellow.bold +
+        _(expectations.pop()).padRight(expectationWidth).green.bold +
+        prepareActual(actuals.pop())
+    )).filter(Boolean).join('\n')
   }).filter(Boolean).join('\n\n'))
 
-	function prepareActual (str) {
-		return (str.match(/^\s*/) || [''])[0].replace(/./g, '\\s').cyan
-			   + str.trim().red.bold
-			   + (str.match(/\s*$/) || [''])[0].replace(/./g, '\\s').cyan
-	}
+  function prepareActual (str) {
+    return (str.match(/^\s*/) || [''])[0].replace(/./g, '\\s').cyan
+         + str.trim().red.bold
+         + (str.match(/\s*$/) || [''])[0].replace(/./g, '\\s').cyan
+  }
 }
 
 function formatCodeFilePath (codeFilePath) {
