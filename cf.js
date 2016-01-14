@@ -14,8 +14,8 @@ const main = new Function('readline', 'write', 'print', code)
 const {testsToRun, testsQuantity, params} = parseTestsFile()
 printParamsWarnings(params)
 const testsResults = runTests(main, testsToRun, params)
-printWarnings(code, testsResults, testsQuantity, params)
 printTestsResults(testsResults)
+printWarnings(code, testsResults, testsQuantity, params)
 
 
 function readCodeFile () {
