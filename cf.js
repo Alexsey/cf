@@ -96,7 +96,9 @@ function parseTestsFile () {
   }
 
   function setDefaultParams (params) {
-    _.defaults(params, {'@': '@', '+': '+', '-': '-', 's': '=*='})
+    // todo after remove default \n after params.s - remove it prior params.s
+    // todo think of better default params.s value
+    _.defaults(params, {'@': '@', '+': '+', '-': '-', 's': '\n=*='})
     if ('f' in params) params.f = true
     if ('l' in params) params.l = true
     if ('k' in params) {
@@ -167,13 +169,14 @@ function runTests (main, tests, params) {
 
 function printWarnings (code, testResult, testsQuantity, params) {
   if (!_.every(testResult, 'isSuccess')) return
-  if (code.includes('console.log')) console.log('console.log\n'.yellow.bold)
+  if (code.includes('console.log')) console.log('\nconsole.log'.yellow.bold)
   if (testResult.length < testsQuantity) {
-    console.log(`${testResult.length} of ${testsQuantity}`.green.bold)
-  } else if (params.k) {console.log(params.k)}
+    console.log(`\n${testResult.length} of ${testsQuantity}`.green.bold)
+  } else if (params.k) {console.log(`\n${params.k}`)}
 }
 
 function printTestsResults (testResults) {
+  // todo add support of l parameter
   (_.findLast(testResults, testResult =>
       testResult.logs.length || !testResult.isSuccess)
   || testResults[0]).lastOutput = true
@@ -192,6 +195,7 @@ function printTestsResults (testResults) {
     const inputWidth       = _(inputs)      .map('length').max() + 3
 
     return [logs,
+      // todo no default \n after params.s
             logs && testResult.isSuccess && !testResult.lastOutput && params.s
     ].concat(!testResult.isSuccess &&  _.times(outputHeight, () =>
         _(inputs.pop()).padRight(inputWidth).yellow.bold +
