@@ -97,16 +97,14 @@ function parseTestsFile () {
   }
 
   function setDefaultParams (params) {
-    // todo after remove default \n after params.s - remove it prior params.s
-    // todo think of better default params.s value
-    _.defaults(params, {'@': '@', '+': '+', '-': '-', 's': '\n=*='})
+    _.defaults(params, {'@': '@', '+': '+', '-': '-'})
     if ('f' in params) params.f = true
     if ('l' in params) params.l = true
     if ('k' in params) {
       if (!params.k) params.k = 'OK!'
       params.k = params.k.green.bold
     }
-    params.s = params.s.bold.cyan
+    if (params.s) params.s = params.s.bold.cyan
     return params
   }
 }
