@@ -81,6 +81,7 @@ function parseTestsFile () {
   }
 
   function parseParams (paramsLine = '') {
+		// future todo add normal escaping and string with spaces in quotes
     return _(_(paramsLine)    // ' k =all\sdone!    n '
       .split('=')             // [' p ', 'all\sdone!    n ']
       .invoke('trim')         // ['p', 'all\sdone!    n']
