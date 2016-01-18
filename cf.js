@@ -192,9 +192,9 @@ function printTestsResults (testResults) {
     const expectationWidth = _(expectations).map('length').max() + 3
     const inputWidth       = _(inputs)      .map('length').max() + 3
 
-		// todo think over better flags cause it's a brain fuck
-    return [!(testResult.isSuccess && params.l) && logs,
-            logs && testResult.isSuccess && !params.l && !testResult.lastOutput && params.s
+		const logsToPrint = !(testResult.isSuccess && params.l) && logs || ''
+    return [logsToPrint,
+			logsToPrint && testResult.isSuccess && !testResult.lastOutput && params.s
     ].concat(!testResult.isSuccess &&  _.times(outputHeight, () =>
         _(inputs.pop()).padRight(inputWidth).yellow.bold +
         _(expectations.pop()).padRight(expectationWidth).green.bold +
