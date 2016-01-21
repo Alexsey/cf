@@ -82,7 +82,7 @@ function parseTestsFile () {
   }
 
   function parseParams (paramsLine = '') {
-		// future todo add normal escaping and string with spaces in quotes
+    // future todo add normal escaping and string with spaces in quotes
     return _(_(paramsLine)    // ' k =all\sdone!    n '
       .split('=')             // [' p ', 'all\sdone!    n ']
       .invoke('trim')         // ['p', 'all\sdone!    n']
@@ -113,13 +113,13 @@ function parseTestsFile () {
 function getParamsWarningsStr (params) {
   const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k']
   const unknownParams = _.difference(_.keys(params), validParams)
-	const warnings = []
+  const warnings = []
   if (unknownParams.length)
-		warnings.push((`unknown parameter${sForPlural(unknownParams)}: ` +
+    warnings.push((`unknown parameter${sForPlural(unknownParams)}: ` +
     `${unknownParams.join(', ')}`).cyan.bold)
   if ('p' in params && !_.isFinite(+params.p))
-		warnings.push('parameter `p` should be a number'.cyan.bold)
-	return warnings.join('\n')
+    warnings.push('parameter `p` should be a number'.cyan.bold)
+  return warnings.join('\n')
 
   function sForPlural (arr) {
     return arr.length > 1 ? 's' : ''
@@ -171,17 +171,17 @@ function runTests (main, tests, params) {
 
 function getWarningsStr (code, testResult, testsQuantity, params) {
   if (!_.every(testResult, 'isSuccess')) return
-	const warnings = []
+  const warnings = []
   if (code.includes('console.log')) warnings.push('console.log'.yellow.bold)
   if (testResult.length < testsQuantity) {
-		warnings.push(`${testResult.length} of ${testsQuantity}`.green.bold)
+    warnings.push(`${testResult.length} of ${testsQuantity}`.green.bold)
   } else if (params.k) {warnings.push(params.k)}
-	return warnings.join('\n')
+  return warnings.join('\n')
 }
 
 function print (...parts) {
-	const toPrint = parts.filter(Boolean).join('\n\n')
-	if (toPrint) console.log(toPrint)
+  const toPrint = parts.filter(Boolean).join('\n\n')
+  if (toPrint) console.log(toPrint)
 }
 
 function getTestsResultsStr (testResults) {
@@ -202,9 +202,9 @@ function getTestsResultsStr (testResults) {
     const expectationWidth = _(expectations).map('length').max() + 3
     const inputWidth       = _(inputs)      .map('length').max() + 3
 
-		const logsToPrint = !(testResult.isSuccess && params.l) && logs || ''
+    const logsToPrint = !(testResult.isSuccess && params.l) && logs || ''
     return [logsToPrint,
-			logsToPrint && testResult.isSuccess && !testResult.lastOutput && params.s
+      logsToPrint && testResult.isSuccess && !testResult.lastOutput && params.s
     ].concat(!testResult.isSuccess &&  _.times(outputHeight, () =>
         _(inputs.pop()).padRight(inputWidth).yellow.bold +
         _(expectations.pop()).padRight(expectationWidth).green.bold +
