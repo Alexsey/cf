@@ -108,16 +108,16 @@ function parseTestsFile () {
 }
 
 function getParamsWarningsStr (params) {
+const warnings = []
   const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k']
   const unknownParams = _.difference(_.keys(params), validParams)
-  const warnings = []
   if (unknownParams.length)
     warnings.push((`unknown parameter${sForPlural(unknownParams)}: ` +
     `${unknownParams.join(', ')}`).cyan.bold)
   if ('p' in params && !_.isFinite(+params.p))
     warnings.push('parameter `p` should be a number'.cyan.bold)
-	if ('s' in params && !params.s)
-		warnings.push('parameter `s` should have a value'.cyan.bold)
+  if ('s' in params && !params.s)
+    warnings.push('parameter `s` should have a value'.cyan.bold)
   return warnings.join('\n')
 
   function sForPlural (arr) {
