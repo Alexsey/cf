@@ -12,10 +12,11 @@ const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 const code = readCodeFile()
 const main = new Function('readline', 'write', 'print', code)
 const {testsToRun, testsQuantity, params} = parseTestsFile()
-printParamsWarnings(params)
+const paramsWarningsStr = getParamsWarningsStr(params)
 const testsResults = runTests(main, testsToRun, params)
-printTestsResults(testsResults)
-printWarnings(code, testsResults, testsQuantity, params)
+const testResultsStr = getTestsResultsStr(testsResults)
+const warningsStr = getWarningsStr(code, testsResults, testsQuantity, params)
+print(paramsWarningsStr, testResultsStr, warningsStr)
 
 
 function readCodeFile () {
@@ -109,14 +110,16 @@ function parseTestsFile () {
   }
 }
 
-function printParamsWarnings (params) {
+function getParamsWarningsStr (params) {
   const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k']
   const unknownParams = _.difference(_.keys(params), validParams)
+	const warnings = []
   if (unknownParams.length)
-    console.log((`unknown parameter${sForPlural(unknownParams)}: ` +
-    `${unknownParams.join(', ')}\n`).cyan.bold)
+		warnings.push((`unknown parameter${sForPlural(unknownParams)}: ` +
+    `${unknownParams.join(', ')}`).cyan.bold)
   if ('p' in params && !_.isFinite(+params.p))
-    console.log('parameter `p` should be a number\n'.cyan.bold)
+		warnings.push('parameter `p` should be a number'.cyan.bold)
+	return warnings.join('\n')
 
   function sForPlural (arr) {
     return arr.length > 1 ? 's' : ''
@@ -166,20 +169,27 @@ function runTests (main, tests, params) {
   }).value()
 }
 
-function printWarnings (code, testResult, testsQuantity, params) {
+function getWarningsStr (code, testResult, testsQuantity, params) {
   if (!_.every(testResult, 'isSuccess')) return
-  if (code.includes('console.log')) console.log('\nconsole.log'.yellow.bold)
+	const warnings = []
+  if (code.includes('console.log')) warnings.push('console.log'.yellow.bold)
   if (testResult.length < testsQuantity) {
-    console.log(`\n${testResult.length} of ${testsQuantity}`.green.bold)
-  } else if (params.k) {console.log(`\n${params.k}`)}
+		warnings.push(`${testResult.length} of ${testsQuantity}`.green.bold)
+  } else if (params.k) {warnings.push(params.k)}
+	return warnings.join('\n')
 }
 
-function printTestsResults (testResults) {
+function print (...parts) {
+	const toPrint = parts.filter(Boolean).join('\n\n')
+	if (toPrint) console.log(toPrint)
+}
+
+function getTestsResultsStr (testResults) {
   (_.findLast(testResults, testResult =>
       testResult.logs.length || !testResult.isSuccess)
   || testResults[0]).lastOutput = true
 
-  console.log(testResults.map(testResult => {
+  return testResults.map(testResult => {
     const logs = _(testResult.logs).invoke('join', ' ').join('\n')
     const expectations = testResult.expectation.split('\n').reverse()
     const actuals      = testResult.actual     .split('\n').reverse()
@@ -200,7 +210,7 @@ function printTestsResults (testResults) {
         _(expectations.pop()).padRight(expectationWidth).green.bold +
         prepareActual(actuals.pop())
     )).filter(Boolean).join('\n')
-  }).filter(Boolean).join('\n\n'))
+  }).filter(Boolean).join('\n\n')
 
   function prepareActual (str) {
     return (str.match(/^\s*/) || [''])[0].replace(/./g, '\\s').cyan
@@ -221,11 +231,11 @@ function readFile (fileName) {
 
 function terminate (error) {
   if (_.isError(error)) {
-    process.stderr.write(formatStackTrace(error.stack).red)
+    process.stderr.write(formatStackTrace(error.stack).red + '\n')
   } else if (_.isString(error)) {
-    process.stderr.write(error.red)
+    process.stderr.write(error.red + '\n')
   } else if (arguments.length) {
-    process.stderr.write(util.inspect(error, false, null).red)
+    process.stderr.write(util.inspect(error, false, null).red + '\n')
   }
   process.exit(1)
 
