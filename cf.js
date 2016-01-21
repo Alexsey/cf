@@ -116,6 +116,8 @@ function getParamsWarningsStr (params) {
     `${unknownParams.join(', ')}`).cyan.bold)
   if ('p' in params && !_.isFinite(+params.p))
     warnings.push('parameter `p` should be a number'.cyan.bold)
+	if ('s' in params && !params.s)
+		warnings.push('parameter `s` should have a value'.cyan.bold)
   return warnings.join('\n')
 
   function sForPlural (arr) {
