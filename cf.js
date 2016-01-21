@@ -45,7 +45,7 @@ function parseTestsFile () {
 
   if (!testsStr) terminate('file with tests not found')
 
-  const paragraphs = testsStr.trim().split(/\s*[\n\s*]{2,}/g)
+  const paragraphs = testsStr.trim().split(/\s*(?:\n\s*){2,}/g)
   const testParagraphs = paragraphs.slice(paragraphs.length % 2)
   const paramsLine = paragraphs.slice(0, paragraphs.length % 2)[0]
 
