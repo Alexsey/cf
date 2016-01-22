@@ -119,12 +119,18 @@ const warnings = []
     `${unknownParams.join(', ')}`).cyan.bold)
   if ('p' in params && !_.isFinite(+params.p))
     warnings.push('parameter `p` should be a number'.cyan.bold)
-  if ('s' in params && !params.s)
-    warnings.push('parameter `s` should have a value'.cyan.bold)
+  paramsShouldHaveValueWarnings(['s', '@', '+', '-', '\\'], params, warnings)
   return warnings.join('\n')
 
   function sForPlural (arr) {
     return arr.length > 1 ? 's' : ''
+  }
+
+  function paramsShouldHaveValueWarnings (paramsToTest, params, warnings) {
+    paramsToTest.forEach(p => {
+      if (p in params && !params[p])
+        warnings.push(`parameter '${p}' should have a value`.cyan.bold)
+    })
   }
 }
 
