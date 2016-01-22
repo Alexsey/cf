@@ -11,8 +11,7 @@ const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 
 const code = readCodeFile()
 const main = new Function('readline', 'write', 'print', code)
-const {testsToRun, testsQuantity, params} = parseTestsFile()
-const paramsWarningsStr = getParamsWarningsStr(params)
+const {testsToRun, testsQuantity, params, paramsWarningsStr} = parseTestsFile()
 const testsResults = runTests(main, testsToRun, params)
 const testResultsStr = getTestsResultsStr(testsResults)
 const warningsStr = getWarningsStr(code, testsResults, testsQuantity, params)
@@ -50,12 +49,15 @@ function parseTestsFile () {
   const testParagraphs = paragraphs.slice(paragraphs.length % 2)
   const paramsLine = paragraphs.slice(0, paragraphs.length % 2)[0]
 
-  const params = setDefaultParams(parseParams(paramsLine))
+  const rawParams = parseParams(paramsLine)
+  const paramsWarningsStr = getParamsWarningsStr(rawParams)
+  const params = setDefaultParams(rawParams)
   const tests = parseTests(testParagraphs, params)
 
   return {
     testsToRun: tests.testsToRun,
     testsQuantity: tests.testsQuantity,
+    paramsWarningsStr,
     params
   }
 
@@ -100,6 +102,30 @@ function parseTestsFile () {
       .value() || {}
   }
 
+  function getParamsWarningsStr (params) {
+    const warnings = []
+    const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k', '\\']
+    const unknownParams = _.difference(_.keys(params), validParams)
+    if (unknownParams.length)
+      warnings.push((`unknown parameter${sForPlural(unknownParams)}: ` +
+      `${unknownParams.join(', ')}`).cyan.bold)
+    if ('p' in params && !_.isFinite(+params.p))
+      warnings.push('parameter `p` should be a number'.cyan.bold)
+    paramsShouldHaveValueWarnings(['s', '@', '+', '-', '\\'], params, warnings)
+    return warnings.join('\n')
+
+    function sForPlural (arr) {
+      return arr.length > 1 ? 's' : ''
+    }
+
+    function paramsShouldHaveValueWarnings (paramsToTest, params, warnings) {
+      paramsToTest.forEach(p => {
+        if (p in params && !params[p])
+          warnings.push(`parameter '${p}' should have a value`.cyan.bold)
+      })
+    }
+  }
+
   function setDefaultParams (params) {
     _.defaults(params, {'@': '@', '+': '+', '-': '-', '\\': ''})
     if ('f' in params) params.f = true
@@ -107,30 +133,6 @@ function parseTestsFile () {
     if ('k' in params) params.k = (params.k || 'OK!').green.bold
     if (params.s) params.s = params.s.cyan.bold
     return params
-  }
-}
-
-function getParamsWarningsStr (params) {
-const warnings = []
-  const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k', '\\']
-  const unknownParams = _.difference(_.keys(params), validParams)
-  if (unknownParams.length)
-    warnings.push((`unknown parameter${sForPlural(unknownParams)}: ` +
-    `${unknownParams.join(', ')}`).cyan.bold)
-  if ('p' in params && !_.isFinite(+params.p))
-    warnings.push('parameter `p` should be a number'.cyan.bold)
-  paramsShouldHaveValueWarnings(['s', '@', '+', '-', '\\'], params, warnings)
-  return warnings.join('\n')
-
-  function sForPlural (arr) {
-    return arr.length > 1 ? 's' : ''
-  }
-
-  function paramsShouldHaveValueWarnings (paramsToTest, params, warnings) {
-    paramsToTest.forEach(p => {
-      if (p in params && !params[p])
-        warnings.push(`parameter '${p}' should have a value`.cyan.bold)
-    })
   }
 }
 
