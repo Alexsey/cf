@@ -127,7 +127,7 @@ function parseTestsFile () {
   }
 
   function setDefaultParams (params) {
-    _.defaults(params, {'@': '@', '+': '+', '-': '-', '\\': ''})
+    _.defaults(params, {'@': '@', '+': '+', '-': '-', '\\': '\\\\'})
     if ('f' in params) params.f = true
     if ('l' in params) params.l = true
     if ('k' in params) params.k = (params.k || 'OK!').green.bold
