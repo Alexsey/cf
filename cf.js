@@ -61,7 +61,10 @@ function parseTestsFile () {
 
   function parseTests (paragraphs, params) {
     const tests = _.chunk(paragraphs, 2)
-      .map(([input, expectation]) => ({input, expectation}))
+      .map(([input, expectation]) => ({
+        input: input.replace(RegExp(params['\\'], 'g'), ''),
+        expectation: expectation.replace(RegExp(params['\\'], 'g'), '')
+      }))
 
     const {testsRunOnly, testsCommon} = _.groupBy(tests, v => {
       switch (v.input[0]) {
@@ -98,7 +101,7 @@ function parseTestsFile () {
   }
 
   function setDefaultParams (params) {
-    _.defaults(params, {'@': '@', '+': '+', '-': '-'})
+    _.defaults(params, {'@': '@', '+': '+', '-': '-', '\\': ''})
     if ('f' in params) params.f = true
     if ('l' in params) params.l = true
     if ('k' in params) params.k = (params.k || 'OK!').green.bold
@@ -109,7 +112,7 @@ function parseTestsFile () {
 
 function getParamsWarningsStr (params) {
 const warnings = []
-  const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k']
+  const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k', '\\']
   const unknownParams = _.difference(_.keys(params), validParams)
   if (unknownParams.length)
     warnings.push((`unknown parameter${sForPlural(unknownParams)}: ` +
@@ -156,6 +159,7 @@ function runTests (main, tests, params) {
     } else if (actual && !actual.endsWith('\n')) {
       testResult.isSuccess = false
       testResult.expectation = 'test output must ends with \\n'
+    // todo test p by line
     } else if (params.p && [+expectation, +actual].every(_.isFinite)
       ? Math.abs(expectation - actual) >= Math.pow(10, -params.p)
       : actual != expectation + '\n'
