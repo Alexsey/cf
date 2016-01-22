@@ -39,7 +39,7 @@ function parseTestsFile () {
   const testFilePath = process.argv[3]
   const codeFilePath = formatCodeFilePath(process.argv[2])
   const testsStr = readFile(testFilePath)
-    || readFile(codeFilePath.slice(0, -3)) // 1A.js -> 1A
+    || readFile(codeFilePath.slice(0, -3))          // 1A.js -> 1A
     || readFile(codeFilePath.slice(0, -2) + 'test') // 1A.js -> 1A.test
     || readFile('tests')
     || readFile('test')
