@@ -202,25 +202,27 @@ function getTestsResultsStr (testResults) {
 
   return testResults.map(testResult => {
     const logs = _(testResult.logs).invoke('join', ' ').join('\n')
+    const logsToPrint = !(testResult.isSuccess && params.l) && logs || ''
+    const logsSeparator = logsToPrint
+      && testResult.isSuccess && !testResult.lastOutput && params.s
+
     const expectations = testResult.expectation.split('\n').reverse()
     const actuals      = testResult.actual     .split('\n').reverse()
     const inputs       = testResult.input      .split('\n').reverse()
 
-    const outputHeight = _([expectations, actuals, inputs]).map('length').max()
-    const pad = a => a.fill('', a.length, a.length = outputHeight)
+    const resultHeight = _([expectations, actuals, inputs]).map('length').max()
+    const pad = a => a.fill('', a.length, a.length = resultHeight)
     ;[expectations, actuals, inputs].map(pad)
 
     const expectationWidth = _(expectations).map('length').max() + 3
     const inputWidth       = _(inputs)      .map('length').max() + 3
 
-    const logsToPrint = !(testResult.isSuccess && params.l) && logs || ''
-    return [logsToPrint,
-      logsToPrint && testResult.isSuccess && !testResult.lastOutput && params.s
-    ].concat(!testResult.isSuccess &&  _.times(outputHeight, () =>
-        _(inputs.pop()).padRight(inputWidth).yellow.bold +
-        _(expectations.pop()).padRight(expectationWidth).green.bold +
-        prepareActual(actuals.pop())
-    )).filter(Boolean).join('\n')
+    const result = !testResult.isSuccess ?  _.times(resultHeight, () =>
+      _(inputs.pop()).padRight(inputWidth).yellow.bold +
+      _(expectations.pop()).padRight(expectationWidth).green.bold +
+      prepareActual(actuals.pop())) : []
+
+    return [logsToPrint, logsSeparator, ...result].filter(Boolean).join('\n')
   }).filter(Boolean).join('\n\n')
 
   function prepareActual (str) {
