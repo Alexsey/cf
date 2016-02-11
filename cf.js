@@ -10,6 +10,7 @@ const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 
 
 const code = readCodeFile()
+// todo add __inspect__
 const main = new Function('readline', 'write', 'print', code)
 const {testsToRun, testsQuantity, params, paramsWarningsStr} = parseTestsFile()
 const testsResults = runTests(main, testsToRun, params)
@@ -70,6 +71,7 @@ function parseTestsFile () {
 
     const {testsRunOnly, testsCommon} = _.groupBy(tests, v => {
       switch (v.input[0]) {
+        // todo should work only on separate line (+\n and -\n)
         case params['+']: return 'testsRunOnly'
         case params['-']: return 'testsSkip'
         default : return 'testsCommon'
@@ -130,6 +132,7 @@ function parseTestsFile () {
     _.defaults(params, {'@': '@', '+': '+', '-': '-', '\\': '\\\\'})
     if ('f' in params) params.f = true
     if ('l' in params) params.l = true
+    // todo params.k should be default
     if ('k' in params) params.k = (params.k || 'OK!').green.bold
     if (params.s) params.s = params.s.cyan.bold
     return params
@@ -167,7 +170,7 @@ function runTests (main, tests, params) {
     } else if (actual && !actual.endsWith('\n')) {
       testResult.isSuccess = false
       testResult.expectation = 'test output must ends with \\n'
-    // todo test p by line
+    // todo test p by line. ex. 20B need by line. check if 1.000 vs 1 is ok
     } else if (params.p && [+expectation, +actual].every(_.isFinite)
       ? Math.abs(expectation - actual) >= Math.pow(10, -params.p)
       : actual != expectation + '\n'
@@ -176,6 +179,7 @@ function runTests (main, tests, params) {
     }
     testResult.actual = actual.replace(/\n$/, '')
 
+    // todo param.f should be default
     if (!testResult.isSuccess && params.f) return false
   }).value()
 }
@@ -202,6 +206,7 @@ function getTestsResultsStr (testResults) {
 
   return testResults.map(testResult => {
     const logs = _(testResult.logs).invoke('join', ' ').join('\n')
+    // todo param l should be default
     const logsToPrint = !(testResult.isSuccess && params.l) && logs || ''
     const logsSeparator = logsToPrint
       && testResult.isSuccess && !testResult.lastOutput && params.s
