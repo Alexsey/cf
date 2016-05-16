@@ -37,6 +37,7 @@ function readCodeFile () {
 
 function parseTestsFile () {
   const testFilePath = process.argv[3]
+	// todo some strange behaviour with codeFilePath starts on !. Like '!48B'
   const codeFilePath = formatCodeFilePath(process.argv[2])
   const testsStr = readFile(testFilePath)
     || readFile(codeFilePath.slice(0, -3))          // 1A.js -> 1A
