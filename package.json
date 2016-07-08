@@ -1,6 +1,6 @@
 {
   "name": "cf",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "codeforces test runner",
   "bin": "./index.js",
   "scripts": {
@@ -21,9 +21,6 @@
   "homepage": "https://github.com/Alexsey/cf#readme",
   "dependencies": {
     "colors": "^1.1.2",
-    "lodash": "^3.10.1",
-    "babel-register": "^6.3.13",
-    "babel-plugin-transform-es2015-destructuring": "^6.1.18",
-    "babel-plugin-transform-es2015-parameters": "^6.1.18"
+    "lodash": "^4.13.1"
   }
 }
