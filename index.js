@@ -11,7 +11,6 @@ const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 
 
 const code = readCodeFile()
-// todo add __inspect__
 const main = new Function('readline', 'write', 'print', code)
 const {testsToRun, testsQuantity, params, paramsWarningsStr} = parseTestsFile()
 const testsResults = runTests(main, testsToRun, params)
@@ -38,7 +37,6 @@ function readCodeFile () {
 
 function parseTestsFile () {
 	const testFilePath = process.argv[3]
-	// todo some strange behaviour with codeFilePath starts on !. Like '!48B'
 	const codeFilePath = formatCodeFilePath(process.argv[2])
 	const testsStr = readFile(testFilePath)
 		|| readFile(codeFilePath.slice(0, -3))          // 1A.js -> 1A
@@ -250,13 +248,12 @@ function readFile (fileName) {
 }
 
 function terminate (error) {
-	if (_.isError(error)) {
+	if (_.isError(error))
 		process.stderr.write(formatStackTrace(error.stack).red + '\n')
-	} else if (_.isString(error)) {
+	else if (_.isString(error))
 		process.stderr.write(error.red + '\n')
-	} else if (arguments.length) {
+	else if (arguments.length)
 		process.stderr.write(util.inspect(error, {depth: null}).red + '\n')
-	}
 	process.exit(1)
 
 	function formatStackTrace (stackTrace) {
