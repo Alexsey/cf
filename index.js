@@ -70,8 +70,8 @@ function parseTestsFile () {
 			}))
 
 		const {testsRunOnly, testsCommon} = _.groupBy(tests, v => {
-			switch (v.input[0]) {
-				// todo should work only on separate line (+\n and -\n)
+			const ioNewLine = v.input.indexOf('\n')
+			switch (v.input.slice(0, ioNewLine).trim()) {
 				case params['+']: return 'testsRunOnly'
 				case params['-']: return 'testsSkip'
 				default : return 'testsCommon'
