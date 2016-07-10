@@ -225,20 +225,21 @@ function getTestsResultsStr (testResults) {
 
 		const resultHeight = _([expectations, actuals, inputs]).map('length').max()
 		const pad = a => a.fill('', a.length, a.length = resultHeight)
-			;[expectations, actuals, inputs].map(pad)
+		;[expectations, actuals, inputs].map(pad)
 
 		const expectationWidth = _(expectations).map('length').max() + 3
 		const inputWidth       = _(inputs)      .map('length').max() + 3
 
 		const result = !testResult.isSuccess ?  _.times(resultHeight, () =>
-		_(inputs.pop()).padEnd(inputWidth).yellow.bold +
-		_(expectations.pop()).padEnd(expectationWidth).green.bold +
-		prepareActual(actuals.pop())) : []
+			_(inputs.pop()).padEnd(inputWidth).yellow.bold +
+			_(expectations.pop()).padEnd(expectationWidth).green.bold +
+			prepareActual(actuals.pop())) : []
 
 		return [logsToPrint, logsSeparator, ...result].filter(Boolean).join('\n')
 	}).filter(Boolean).join('\n\n')
 
 	function prepareActual (str) {
+		if (str == '') return '\\n'.cyan
 		return (str.match(/^\s*/) || [''])[0].replace(/./g, '\\s').cyan
 			+ str.trim().red.bold
 			+ (str.match(/\s*$/) || [''])[0].replace(/./g, '\\s').cyan
