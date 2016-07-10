@@ -140,6 +140,7 @@ function parseTestsFile () {
 }
 
 function runTests (main, tests, params) {
+	// todo redirect stdout to buffer instead of having array of logs
 	const nativeLog = console.log
 	return _(_(tests).cloneDeep()).transform((testsResults, testResult) => {
 		testsResults.push(testResult)
@@ -193,6 +194,7 @@ function runTests (main, tests, params) {
 function getWarningsStr (code, testResult, testsQuantity, params) {
 	if (!_.every(testResult, 'isSuccess')) return
 	const warnings = []
+	// todo add console.dir warning
 	if (code.includes('console.log')) warnings.push('console.log'.yellow.bold)
 	if (testResult.length < testsQuantity) {
 		warnings.push(`${testResult.length} of ${testsQuantity}`.green.bold)
