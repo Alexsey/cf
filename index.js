@@ -219,30 +219,29 @@ function getTestsResultsStr (testResults) {
 		const logsSeparator = logsToPrint
 			&& testResult.isSuccess && !testResult.lastOutput && params.s
 
-		const expectations = testResult.expectation.split('\n').reverse()
-		const actuals      = testResult.actual     .split('\n').reverse()
-		const inputs       = testResult.input      .split('\n').reverse()
-
-		const resultHeight = _([expectations, actuals, inputs]).map('length').max()
-		const pad = a => a.fill('', a.length, a.length = resultHeight)
-		;[expectations, actuals, inputs].map(pad)
+		const expectations = testResult.expectation.split('\n')
+		const actuals      = testResult.actual     .split('\n')
+		const inputs       = testResult.input      .split('\n')
 
 		const expectationWidth = _(expectations).map('length').max() + 3
 		const inputWidth       = _(inputs)      .map('length').max() + 3
 
-		const result = !testResult.isSuccess ?  _.times(resultHeight, () =>
-			_(inputs.pop()).padEnd(inputWidth).yellow.bold +
-			_(expectations.pop()).padEnd(expectationWidth).green.bold +
-			prepareActual(actuals.pop())) : []
+		const resultHeight = _([expectations, actuals, inputs]).map('length').max()
+		const result = testResult.isSuccess ? [] : _.times(resultHeight, () =>
+			formatCell(inputs.pop(), 'yellow', inputWidth) +
+			formatCell(expectations.pop(), 'green', expectationWidth) +
+			formatCell(actuals.pop(), 'red')).reverse()
 
 		return [logsToPrint, logsSeparator, ...result].filter(Boolean).join('\n')
 	}).filter(Boolean).join('\n\n')
 
-	function prepareActual (str) {
-		if (str == '') return '\\n'.cyan
-		return (str.match(/^\s*/) || [''])[0].replace(/./g, '\\s').cyan
-			+ str.trim().red.bold
-			+ (str.match(/\s*$/) || [''])[0].replace(/./g, '\\s').cyan
+	function formatCell (str, color, width) {
+		if (str == null) return _.repeat(' ', width)
+		if (str == '') return '↵'.cyan.bold + _.repeat(' ', width - 1)
+		const length = str.length
+		return str.replace(/\S.*?(?=\s*$)/g, s => s[color].bold)
+			.replace(/^\s*|\s*$/g, s => _.repeat('•'.cyan, s.length))
+			+ _.repeat(' ', width - length)
 	}
 }
 
