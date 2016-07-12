@@ -90,18 +90,18 @@ function parseTestsFile () {
 
 	function parseParams (paramsLine = '') {
 		// future todo add normal escaping and string with spaces in quotes
-		return _(_(paramsLine)    // ' k =all\sdone!    n '
-				.split('=')             // [' p ', 'all\sdone!    n ']
-				.invokeMap('trim')      // ['p', 'all\sdone!    n']
-				.join('=')              // ['p=all\sdone!    n']
-				.split(' ')             // ['p=all\sdone!', '', '', '', '', 'n']
-				.filter(Boolean)        // ['p=all\sdone!', 'n']
-				.map(p => p.split('=')) // [['p', 'all\sdone!'], ['n']]
-				.map(p => [p[0], p[1]   // [['p', 'all done!'], ['n', undefined]]
+		return _.chain(paramsLine)  // ' k =all\sdone!    n '
+			.split('=')               // [' p ', 'all\sdone!    n ']
+			.invokeMap('trim')        // ['p', 'all\sdone!    n']
+			.join('=')                // ['p=all\sdone!    n']
+			.split(' ')               // ['p=all\sdone!', '', '', '', '', 'n']
+			.filter(Boolean)          // ['p=all\sdone!', 'n']
+			.map(p => p.split('='))   // [['p', 'all\sdone!'], ['n']]
+			.map(p => [p[0], p[1]     // [['p', 'all done!'], ['n', undefined]]
 				&& p[1].replace(/\\n/g, '\n')
-					.replace(/\\s/g, ' ')]))
-				.fromPairs()            // {p: 'all done!', n: undefined}
-				.value() || {}
+				       .replace(/\\s/g, ' ')])
+			.fromPairs()              // {p: 'all done!', n: undefined}
+			.value() || {}
 	}
 
 	function getParamsWarningsStr (params) {
