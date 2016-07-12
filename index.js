@@ -130,10 +130,9 @@ function parseTestsFile () {
 
   function setDefaultParams (params) {
     _.defaults(params, {'@': '@', '+': '+', '-': '-', '\\': '\\\\'})
-    if ('f' in params) params.f = true
-    if ('l' in params) params.l = true
-    // todo params.k should be default
-    if ('k' in params) params.k = (params.k || 'OK!').green.bold
+    if (!('f' in params)) params.f = true
+    if (!('l' in params)) params.l = true
+    if (!('k' in params) || params.k) params.k = (params.k || 'OK!').green.bold
     if (params.s) params.s = params.s.cyan.bold
     return params
   }
@@ -186,7 +185,6 @@ function runTests (main, tests, params) {
     }
     testResult.actual = actual.replace(/\n$/, '')
 
-    // todo param.f should be default
     if (!testResult.isSuccess && params.f) return false
   }).value()
 }
@@ -194,7 +192,7 @@ function runTests (main, tests, params) {
 function getWarningsStr (code, testResult, testsQuantity, params) {
   if (!_.every(testResult, 'isSuccess')) return
   const warnings = []
-  // todo add console.dir warning
+	if (code.includes('console.dir')) warnings.push('console.dir'.yellow.bold)
   if (code.includes('console.log')) warnings.push('console.log'.yellow.bold)
   if (testResult.length < testsQuantity) {
     warnings.push(`${testResult.length} of ${testsQuantity}`.green.bold)
@@ -214,7 +212,6 @@ function getTestsResultsStr (testResults) {
 
   return testResults.map(testResult => {
     const logs = _(testResult.logs).invokeMap('join', ' ').join('\n')
-    // todo param l should be default
     const logsToPrint = !(testResult.isSuccess && params.l) && logs || ''
     const logsSeparator = logsToPrint
       && testResult.isSuccess && !testResult.lastOutput && params.s
