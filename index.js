@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --es_staging
 'use strict'
 
 const fs = require('fs')
@@ -78,7 +78,6 @@ function parseTestsFile () {
       }
     })
     _.forEach(testsRunOnly, v => v.input = v.input.slice(1).trimStart())
-    //_.forEach(testsSkip, v => v.input = v.input.slice(1).trimStart())
     const testsToRun = testsRunOnly || testsCommon
     if (!testsToRun) terminate('no tests to run')
 
@@ -130,8 +129,8 @@ function parseTestsFile () {
 
   function setDefaultParams (params) {
     _.defaults(params, {'@': '@', '+': '+', '-': '-', '\\': '\\\\'})
-    if (!('f' in params)) params.f = true
-    if (!('l' in params)) params.l = true
+    if ('f' in params) params.f = true
+    if ('l' in params) params.l = true
     if (!('k' in params) || params.k) params.k = (params.k || 'OK!').green.bold
     if (params.s) params.s = params.s.cyan.bold
     return params
@@ -139,12 +138,12 @@ function parseTestsFile () {
 }
 
 function runTests (main, tests, params) {
-	const nativeStdoutWrite = process.stdout.write
+  const nativeStdoutWrite = process.stdout.write
   return _(_(tests).cloneDeep()).transform((testsResults, testResult) => {
     testsResults.push(testResult)
     testResult.isSuccess = true
-		testResult.logs = ''
-		process.stdout.write = chunk => testResult.logs += chunk
+    testResult.logs = ''
+    process.stdout.write = chunk => testResult.logs += chunk
     const {input, expectation} = testResult
     let actual = ''
     const inputByLine = input.split('\n').reverse()
@@ -155,11 +154,11 @@ function runTests (main, tests, params) {
     try {
       main(readline, write, print)
     }  catch (e) {
-			process.stdout.write = nativeStdoutWrite
+      process.stdout.write = nativeStdoutWrite
       console.log(testResult.logs, '\n')
       terminate(e)
     }
-		process.stdout.write = nativeStdoutWrite
+    process.stdout.write = nativeStdoutWrite
 
     if (expectation == params['@']) { // expect empty output
       if (actual) {
@@ -184,14 +183,14 @@ function runTests (main, tests, params) {
     }
     testResult.actual = actual.replace(/\n$/, '')
 
-    if (!testResult.isSuccess && params.f) return false
+    if (!testResult.isSuccess && !params.f) return false
   }).value()
 }
 
 function getWarningsStr (code, testResult, testsQuantity, params) {
   if (!_.every(testResult, 'isSuccess')) return
   const warnings = []
-	if (code.includes('console.dir')) warnings.push('console.dir'.yellow.bold)
+  if (code.includes('console.dir')) warnings.push('console.dir'.yellow.bold)
   if (code.includes('console.log')) warnings.push('console.log'.yellow.bold)
   if (testResult.length < testsQuantity) {
     warnings.push(`${testResult.length} of ${testsQuantity}`.green.bold)
@@ -210,10 +209,10 @@ function getTestsResultsStr (testResults) {
   || testResults[0]).lastOutput = true
 
   return testResults.map(testResult => {
-    const shouldPrintLogs = !testResult.isSuccess || !params.l
+    const shouldPrintLogs = !testResult.isSuccess || params.l
     const logsToPrint = shouldPrintLogs ? testResult.logs : ''
     const logsSeparator = logsToPrint
-			&& testResult.isSuccess && !testResult.lastOutput && params.s
+      && testResult.isSuccess && !testResult.lastOutput && params.s
 
     const expectations = testResult.expectation.split('\n')
     const actuals      = testResult.actual     .split('\n')
