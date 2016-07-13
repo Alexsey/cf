@@ -139,13 +139,12 @@ function parseTestsFile () {
 }
 
 function runTests (main, tests, params) {
-  // todo redirect stdout to buffer instead of having array of logs
-  const nativeLog = console.log
+	const nativeStdoutWrite = process.stdout.write
   return _(_(tests).cloneDeep()).transform((testsResults, testResult) => {
     testsResults.push(testResult)
     testResult.isSuccess = true
-    const logs = testResult.logs = []
-    console.log = (...args) => logs.push([...args])
+		testResult.logs = ''
+		process.stdout.write = chunk => testResult.logs += chunk
     const {input, expectation} = testResult
     let actual = ''
     const inputByLine = input.split('\n').reverse()
@@ -156,11 +155,11 @@ function runTests (main, tests, params) {
     try {
       main(readline, write, print)
     }  catch (e) {
-      console.log = nativeLog
-      console.log(_(logs).invoke('join', ' ').join('\n'), '\n')
+			process.stdout.write = nativeStdoutWrite
+      console.log(testResult.logs, '\n')
       terminate(e)
     }
-    console.log = nativeLog
+		process.stdout.write = nativeStdoutWrite
 
     if (expectation == params['@']) { // expect empty output
       if (actual) {
@@ -211,10 +210,10 @@ function getTestsResultsStr (testResults) {
   || testResults[0]).lastOutput = true
 
   return testResults.map(testResult => {
-    const logs = _(testResult.logs).invokeMap('join', ' ').join('\n')
-    const logsToPrint = !(testResult.isSuccess && params.l) && logs || ''
+    const shouldPrintLogs = !testResult.isSuccess || !params.l
+    const logsToPrint = shouldPrintLogs ? testResult.logs : ''
     const logsSeparator = logsToPrint
-      && testResult.isSuccess && !testResult.lastOutput && params.s
+			&& testResult.isSuccess && !testResult.lastOutput && params.s
 
     const expectations = testResult.expectation.split('\n')
     const actuals      = testResult.actual     .split('\n')
