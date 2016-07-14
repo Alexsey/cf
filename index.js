@@ -93,20 +93,19 @@ function parseTestsFile () {
     const escapedGroups = []
     const quoted = /(?<!\\)"(.*?)(?<!\\)"/g
     const escaped = RegExp(`${u}\\d+${u}`, 'g')
-    // todo rewrite comments
-    return _.chain(paramsLine)  // ' k =all\sdone!    n '
+    return _.chain(paramsLine)
       .replace(quoted, (m, s) => u + (escapedGroups.push(s) - 1) + u)
-      .split('=')               // [' p ', 'all\sdone!    n ']
-      .invokeMap('trim')        // ['p', 'all\sdone!    n']
-      .join('=')                // ['p=all\sdone!    n']
-      .split(' ')               // ['p=all\sdone!', '', '', '', '', 'n']
-      .filter(Boolean)          // ['p=all\sdone!', 'n']
-      .map(p => p.split('='))   // [['p', 'all\sdone!'], ['n']]
-      .map(p => [p[0], p[1] &&  // [['p', 'all done!'], ['n', undefined]]
+      .split('=')
+      .invokeMap('trim')
+      .join('=')
+      .split(' ')
+      .filter(Boolean)
+      .map(p => p.split('='))
+      .map(p => [p[0], p[1] &&
         p[1].replace(/\\n/g, '\n')
             .replace(escaped, s => escapedGroups[s.slice(1, -1)])
             .replace(/\\"/g, '"')])
-      .fromPairs()              // {p: 'all done!', n: undefined}
+      .fromPairs()
       .value() || {}
   }
 
