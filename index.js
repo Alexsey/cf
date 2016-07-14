@@ -126,9 +126,9 @@ function parseTestsFile () {
     }
 
     function paramsShouldHaveValueWarnings (paramsToTest, params, warnings) {
-      paramsToTest.forEach(p => {
-        if (p in params && !params[p])
-          warnings.push(`parameter '${p}' should have a value`.cyan.bold)
+      paramsToTest.forEach(param => {
+        if (param in params && !params[param])
+          warnings.push(`parameter '${param}' should have a value`.cyan.bold)
       })
     }
   }
