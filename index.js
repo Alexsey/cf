@@ -69,7 +69,7 @@ function parseTestsFile () {
         expectation: expectation.replace(RegExp(params['\\'], 'g'), '')
       }))
 
-    const {testsRunOnly, testsCommon} = _.groupBy(tests, v => {
+    const {testsRunOnly = [], testsCommon = []} = _.groupBy(tests, v => {
       const ioNewLine = v.input.indexOf('\n')
       switch (v.input.slice(0, ioNewLine).trim()) {
         case params['+']: return 'testsRunOnly'
@@ -77,8 +77,8 @@ function parseTestsFile () {
         default : return 'testsCommon'
       }
     })
-    _.forEach(testsRunOnly, v => v.input = v.input.slice(1).trimStart())
-    const testsToRun = testsRunOnly || testsCommon
+    testsRunOnly.forEach(v => v.input = v.input.slice(1).trimStart())
+    const testsToRun = testsRunOnly.length ? testsRunOnly : testsCommon
     if (!testsToRun) terminate('no tests to run')
 
     return {
@@ -116,7 +116,7 @@ function parseTestsFile () {
     if (unknownParams.length)
       warnings.push((`unknown parameter${sForPlural(unknownParams)}: ` +
       `${unknownParams.join(', ')}`).cyan.bold)
-    if ('p' in params && !_.isFinite(+params.p))
+    if ('p' in params && !isFinite(params.p))
       warnings.push('parameter `p` should be a number'.cyan.bold)
     paramsShouldHaveValueWarnings(['s', '@', '+', '-', '\\'], params, warnings)
     return warnings.join('\n')
@@ -182,7 +182,7 @@ function runTests (main, tests, params) {
       useless and undocumented. Be careful on any change inside */
       if (!_(actual).split('\n').initial().isEqualWith(expectation.split('\n'),
           (actLine, expLine) => {
-            if ([+actLine, +expLine].every(_.isFinite))
+            if ([actLine, expLine].every(isFinite))
               return Math.abs(expLine - actLine) < Math.pow(10, -params.p)
           }))
         testResult.isSuccess = false
@@ -224,25 +224,25 @@ function getTestsResultsStr (testResults) {
     const actuals      = testResult.actual     .split('\n')
     const inputs       = testResult.input      .split('\n')
 
-    const expectationWidth = _(expectations).map('length').max() + 3
-    const inputWidth       = _(inputs)      .map('length').max() + 3
+    const expectationWidth = _(expectations).map('length').max()
+    const inputWidth       = _(inputs)      .map('length').max()
+    const actualWidth      = _(actuals)     .map('length').max()
 
     const resultHeight = _([expectations, actuals, inputs]).map('length').max()
     const result = testResult.isSuccess ? [] : _.times(resultHeight, () =>
       formatCell(inputs.pop(), 'yellow', inputWidth) +
       formatCell(expectations.pop(), 'green', expectationWidth) +
-      formatCell(actuals.pop(), 'red')).reverse()
+      formatCell(actuals.pop(), 'red', actualWidth)).reverse()
 
     return [logsToPrint, logsSeparator, ...result].filter(Boolean).join('\n')
   }).filter(Boolean).join('\n\n')
 
   function formatCell (str, color, width) {
-    if (str == null) return _.repeat(' ', width)
-    if (str == '') return '↵'.cyan.bold + _.repeat(' ', width - 1)
-    const length = str.length
-    return str.replace(/\S.*?(?=\s*$)/g, s => s[color].bold)
-      .replace(/^\s*|\s*$/g, s => _.repeat('•'.cyan, s.length))
-      + _.repeat(' ', width - length)
+    if (str == null) return ' '.repeat(width + 3)
+    if (str == '') return _.padStart('↵', width).cyan.bold + ' '.repeat(3)
+    return ' '.repeat(width - str.length)
+      + str.replace(/\S.*?(?=\s*$)/g, s => s[color].bold)
+      .replace(/^\s*|\s*$/g, s => '•'.repeat(s.length).cyan) + ' '.repeat(3)
   }
 }
 
@@ -257,9 +257,9 @@ function readFile (fileName) {
 }
 
 function terminate (error) {
-  if (_.isError(error))
+  if (error instanceof Error)
     process.stderr.write(formatStackTrace(error.stack).red + '\n')
-  else if (_.isString(error))
+  else if (typeof error == 'string')
     process.stderr.write(error.red + '\n')
   else if (arguments.length)
     process.stderr.write(util.inspect(error, {depth: null}).red + '\n')
