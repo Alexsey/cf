@@ -88,8 +88,7 @@ function parseTestsFile () {
   }
 
   function parseParams (paramsLine = '') {
-    const u = String.fromCharCode(
-      _(paramsLine).split('').invokeMap('charCodeAt').max() + 1)
+    const u = getUniqueChar(paramsLine)
     const escapedGroups = []
     const quoted = /(?<!\\)"(.*?)(?<!\\)"/g
     const escaped = RegExp(`${u}\\d+${u}`, 'g')
@@ -107,6 +106,12 @@ function parseTestsFile () {
             .replace(/\\"/g, '"')])
       .fromPairs()
       .value() || {}
+
+      function getUniqueChar (str) {
+        let char, code = -1
+        while (str.includes(char = String.fromCodePoint(++code))) {}
+        return char
+      }
   }
 
   function getParamsWarningsStr (params) {
