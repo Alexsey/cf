@@ -6,9 +6,28 @@ const path = require('path')
 const util = require('util')
 
 process.stdout.isTTY = true // some terminals need this
-require('colors').enabled = true // and/or this to enable color output
+const colors = require('colors')
+colors.enabled = true // and/or this to enable color output
 const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 
+colors.setTheme({
+  warning: ['cyan', 'bold'],
+  error: ['red']
+})
+
+const defaultParams = {
+
+}
+
+if (launchedToSetParams()) {
+  const paramsCL = process.argv.slice(3)
+  const params = parseParamsFromCommandLine(paramsCL)
+  const badParams = getBedParams(params)
+  const goodParams = _.omit(params, _.keys(badParams))
+  const paramsWarnings = getParamsWarnings(badParams)
+  console.log(_(paramsWarnings).map('warning').join('\n'))
+  terminate()
+}
 
 const code = readCodeFile()
 const main = new Function('readline', 'write', 'print', code)
@@ -18,6 +37,9 @@ const testResultsStr = getTestsResultsStr(testsResults)
 const warningsStr = getWarningsStr(code, testsResults, testsQuantity, params)
 print(paramsWarningsStr, testResultsStr, warningsStr)
 
+function launchedToSetParams () {
+  return process.argv[2] == '-p'
+}
 
 function readCodeFile () {
   const rawCodeFilePath = process.argv[2]
@@ -87,12 +109,39 @@ function parseTestsFile () {
     }
   }
 
-  function parseParams (paramsLine = '') {
-    const u = getUniqueChar(paramsLine)
-    const escapedGroups = []
-    const quoted = /(?<!\\)"(.*?)(?<!\\)"/g
-    const escaped = RegExp(`${u}\\d+${u}`, 'g')
-    return _.chain(paramsLine)
+}
+
+function parseParamsFromCommandLine(args) {
+  const u = getUniqueChar(args.join(''))
+  args = args.map(arg => arg.replace(/\\=/g, u)).reverse()
+  const params = {}
+  while (args.length) {
+    let key, value
+    const arg = args.pop()
+    const ioe = arg.indexOf('=')
+    if (~ioe) {
+      key = arg.slice(0, ioe)
+      value = ioe == arg.length - 1 ? args.pop() : arg.slice(ioe + 1)
+    } else {
+      key = arg
+      const argNext = args.pop()
+      if (argNext == '=') value = args.pop()
+      else if (argNext && argNext.startsWith('=')) value = argNext.slice(1)
+      else if (argNext) args.push(argNext)
+    }
+    key = key.replace(RegExp(u, 'g'), '=')
+    value = value && value.replace(RegExp(u, 'g'), '=')
+    params[key] = value
+  }
+  return params
+}
+
+function parseParamsLine (paramsLine = '') {
+  const u = getUniqueChar(paramsLine)
+  const escapedGroups = []
+  const quoted = /(?<!\\)"(.*?)(?<!\\)"/g
+  const escaped = RegExp(`${u}\\d+${u}`, 'g')
+  return _.chain(paramsLine)
       .replace(quoted, (m, s) => u + (escapedGroups.push(s) - 1) + u)
       .split('=')
       .invokeMap('trim')
@@ -106,46 +155,78 @@ function parseTestsFile () {
             .replace(/\\"/g, '"')])
       .fromPairs()
       .value() || {}
+}
 
-      function getUniqueChar (str) {
-        let char, code = -1
-        while (str.includes(char = String.fromCodePoint(++code))) {}
-        return char
-      }
+function getUniqueChar(str) {
+  let char, code = -1
+  while (str.includes(char = String.fromCodePoint(++code))) {}
+  return char
+}
+
+function parseParamsFile () {
+
+}
+
+function getBedParams (params) {
+  const badParams = {}
+  const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k', '\\']
+  _.difference(_.keys(params), validParams)
+    .forEach(param => badParams[param] = 'unknown param')
+  if ('p' in params && !isFinite(params.p))
+    badParams.p = `parameter 'p' should be a number`
+  const mustHaveValueParams = ['s', '@', '+', '-', '\\']
+  _.intersection(mustHaveValueParams, emptyValues(params))
+    .forEach(param => badParams[param] = 'should have value')
+  return badParams
+
+  function emptyValues (obj) {
+    return _(obj).pickBy(_.isUndefined).keys().value()
+  }
+}
+
+function getParamsWarnings (badParams) {
+  return _(badParams).invertBy().map((params, warn) =>
+    `${warn}${sForPlural(params)}: ${params.join(', ')}`
+  ).value()
+
+  function sForPlural (arr) {
+    return arr.length > 1 ? 's' : ''
+  }
+}
+
+function getParamsWarningsStr (params, prefix) {
+  const warnings = []
+  const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k', '\\']
+  const unknownParams = _.difference(_.keys(params), validParams)
+  if (unknownParams.length)
+    warnings.push((`unknown parameter${sForPlural(unknownParams)}: ` +
+    `${unknownParams.join(', ')}`).cyan.bold)
+  if ('p' in params && !isFinite(params.p))
+    warnings.push('parameter `p` should be a number'.cyan.bold)
+  paramsShouldHaveValueWarnings(['s', '@', '+', '-', '\\'], params, warnings)
+  // return warnings.length ? [prefix, ...warnings].join('\n') : []
+  return warnings.length
+    ? prefix ? prefix + '\n' : '' + [warnings].join('\n') : ''
+
+  function sForPlural (arr) {
+    return arr.length > 1 ? 's' : ''
   }
 
-  function getParamsWarningsStr (params) {
-    const warnings = []
-    const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k', '\\']
-    const unknownParams = _.difference(_.keys(params), validParams)
-    if (unknownParams.length)
-      warnings.push((`unknown parameter${sForPlural(unknownParams)}: ` +
-      `${unknownParams.join(', ')}`).cyan.bold)
-    if ('p' in params && !isFinite(params.p))
-      warnings.push('parameter `p` should be a number'.cyan.bold)
-    paramsShouldHaveValueWarnings(['s', '@', '+', '-', '\\'], params, warnings)
-    return warnings.join('\n')
-
-    function sForPlural (arr) {
-      return arr.length > 1 ? 's' : ''
-    }
-
-    function paramsShouldHaveValueWarnings (paramsToTest, params, warnings) {
-      paramsToTest.forEach(param => {
-        if (param in params && !params[param])
-          warnings.push(`parameter '${param}' should have a value`.cyan.bold)
-      })
-    }
+  function paramsShouldHaveValueWarnings (paramsToTest, params, warnings) {
+    paramsToTest.forEach(param => {
+      if (param in params && !params[param])
+        warnings.push(`parameter '${param}' should have a value`.cyan.bold)
+    })
   }
+}
 
-  function setDefaultParams (params) {
-    _.defaults(params, {'@': '@', '+': '+', '-': '-', '\\': '\\\\'})
-    if ('f' in params) params.f = true
-    if ('l' in params) params.l = true
-    if (!('k' in params) || params.k) params.k = (params.k || 'OK!').green.bold
-    if (params.s) params.s = params.s.cyan.bold
-    return params
-  }
+function setDefaultParams (params) {
+  _.defaults(params, {'@': '@', '+': '+', '-': '-', '\\': '\\\\'})
+  if ('f' in params) params.f = true
+  if ('l' in params) params.l = true
+  if (!('k' in params) || params.k) params.k = (params.k || 'OK!').green.bold
+  if (params.s) params.s = params.s.cyan.bold
+  return params
 }
 
 function runTests (main, tests, params) {
@@ -268,7 +349,7 @@ function terminate (error) {
     process.stderr.write(error.red + '\n')
   else if (arguments.length)
     process.stderr.write(util.inspect(error, {depth: null}).red + '\n')
-  process.exit(1)
+  process.exit(error ? 1 : 0)
 
   function formatStackTrace (stackTrace) {
     stackTrace = stackTrace.split('\n')
