@@ -11,21 +11,21 @@ colors.enabled = true // and/or this to enable color output
 const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 
 colors.setTheme({
-  warning: ['cyan', 'bold'],
+  warning: ['yellow', 'bold'],
   error: ['red']
 })
 
 const defaultParams = {
-
+  k: 'OK!',
+  '@': '@',
+  '+': '+',
+  '-': '-',
+  '\\': '\\'
 }
 
-if (launchedToSetParams()) {
-  const paramsCL = process.argv.slice(3)
-  const params = parseParamsFromCommandLine(paramsCL)
-  const badParams = getBedParams(params)
-  const goodParams = _.omit(params, _.keys(badParams))
-  const paramsWarnings = getParamsWarnings(badParams)
-  console.log(_(paramsWarnings).map('warning').join('\n'))
+
+if (process.argv[2] == '-p') {
+  setParamsFromCommandLine()
   terminate()
 }
 
@@ -37,8 +37,16 @@ const testResultsStr = getTestsResultsStr(testsResults)
 const warningsStr = getWarningsStr(code, testsResults, testsQuantity, params)
 print(paramsWarningsStr, testResultsStr, warningsStr)
 
-function launchedToSetParams () {
-  return process.argv[2] == '-p'
+
+function setParamsFromCommandLine () {
+  const paramsCL = process.argv.slice(3)
+  const params = parseParamsFromCommandLine(paramsCL)
+  const {badParams, paramsWithBadValues} = getBedParams(params)
+  const goodParams = _.omit(params, _.keys(badParams))
+  const paramsWarnings = getParamsWarnings(badParams, paramsWithBadValues)
+  if (paramsWarnings.length)
+    console.log(_(paramsWarnings).join('\n'))
+
 }
 
 function readCodeFile () {
@@ -169,24 +177,34 @@ function parseParamsFile () {
 
 function getBedParams (params) {
   const badParams = {}
-  const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k', '\\']
+  const paramsList = ['p', 'f', 'l', 's', '@', '+', '-', 'k', '\\']
+  const validParams = _.flatMap(paramsList, p => [`!${p}`, p])
   _.difference(_.keys(params), validParams)
-    .forEach(param => badParams[param] = 'unknown param')
+    .forEach(param => badParams[param] = 'unknown parameter')
   if ('p' in params && !isFinite(params.p))
-    badParams.p = `parameter 'p' should be a number`
-  const mustHaveValueParams = ['s', '@', '+', '-', '\\']
+    badParams.p = `parameter should be a number`
+  const mustHaveValueParams = ['s', '@', '+', '-', '\\'] // 'p' handled above
   _.intersection(mustHaveValueParams, emptyValues(params))
     .forEach(param => badParams[param] = 'should have value')
-  return badParams
+  const shouldHaveNoValueParams = paramsList.map(p => `!${p}`)
+    .concat(['f', 'l'])
+  const paramsWithBadValues = _(shouldHaveNoValueParams)
+    .intersection(_.keys(params)).transform((params, param) =>
+      params[param] = 'should have no value'
+    ).value()
+  return {badParams, paramsWithBadValues}
 
   function emptyValues (obj) {
     return _(obj).pickBy(_.isUndefined).keys().value()
   }
 }
 
-function getParamsWarnings (badParams) {
-  return _(badParams).invertBy().map((params, warn) =>
-    `${warn}${sForPlural(params)}: ${params.join(', ')}`
+function getParamsWarnings (badParams, paramsWithBadValues) {
+  const bedParamsWarns = _(badParams).invertBy().map((ps, warn) =>
+    `${_.map(ps, 'warning').join(', ')}: ignored - ${warn}${sForPlural(ps)}`
+  ).value()
+  const paramsWithBadValuesWarns = _(paramsWithBadValues).invertBy().map((ps, warn) =>
+    `${_.map(ps, 'warning').join(', ')}: value ignored - ${warn}${sForPlural(ps)}`
   ).value()
 
   function sForPlural (arr) {
