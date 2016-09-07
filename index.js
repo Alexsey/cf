@@ -10,6 +10,8 @@ const colors = require('colors')
 colors.enabled = true // and/or this to enable color output
 const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
 
+const ParamsWarns = require('./paramsWarnings')
+
 colors.setTheme({
   warning: ['yellow', 'bold'],
   error: ['red']
@@ -22,7 +24,6 @@ const defaultParams = {
   '-': '-',
   '\\': '\\'
 }
-
 
 if (process.argv[2] == '-p') {
   setParamsFromCommandLine()
@@ -41,8 +42,8 @@ print(paramsWarningsStr, testResultsStr, warningsStr)
 function setParamsFromCommandLine () {
   const paramsCL = process.argv.slice(3)
   const params = parseParamsFromCommandLine(paramsCL)
-  const {badParams, paramsWithBadValues} = getBedParams(params)
-  const goodParams = _.omit(params, _.keys(badParams))
+  const paramsWarns = getParamsWarns(params)
+  const goodParams = _.omit(params, getParamsWarns.getBadParams())
   const paramsWarnings = getParamsWarnings(badParams, paramsWithBadValues)
   if (paramsWarnings.length)
     console.log(_(paramsWarnings).join('\n'))
@@ -175,28 +176,26 @@ function parseParamsFile () {
 
 }
 
-function getBedParams (params) {
-  const badParams = {}
+function getParamsWarns (params) {
+  const paramsWarns = new ParamsWarns()
+
   const paramsList = ['p', 'f', 'l', 's', '@', '+', '-', 'k', '\\']
   const validParams = _.flatMap(paramsList, p => [`!${p}`, p])
-  _.difference(_.keys(params), validParams)
-    .forEach(param => badParams[param] = 'unknown parameter')
-  if ('p' in params && !isFinite(params.p))
-    badParams.p = `parameter should be a number`
-  const mustHaveValueParams = ['s', '@', '+', '-', '\\'] // 'p' handled above
-  _.intersection(mustHaveValueParams, emptyValues(params))
-    .forEach(param => badParams[param] = 'should have value')
-  const shouldHaveNoValueParams = paramsList.map(p => `!${p}`)
-    .concat(['f', 'l'])
-  const paramsWithBadValues = _(shouldHaveNoValueParams)
-    .intersection(_.keys(params)).transform((params, param) =>
-      params[param] = 'should have no value'
-    ).value()
-  return {badParams, paramsWithBadValues}
+  _.difference(_.keys(params), validParams).forEach(paramsWarns.add('unknown'))
 
-  function emptyValues (obj) {
-    return _(obj).pickBy(_.isUndefined).keys().value()
-  }
+  if ('p' in params && !isFinite(params.p)) paramsWarns.add('byNumber', 'p')
+
+  const mustHaveValueParams = ['s', '@', '+', '-', '\\'] // 'p' handled above
+  const paramsWithValues = _(params).omitBy(_.isUndefined).keys().value()
+  _.intersection(mustHaveValueParams, paramsWithValues)
+    .forEach(paramsWarns.add('shouldHaveValue'))
+
+  const shouldHaveNoValueParams = ['f', 'l', ...paramsList.map(p => `!${p}`)]
+  const paramsWithNoValues = _(params).pickBy(_.isUndefined).keys().value()
+  _.intersection(shouldHaveNoValueParams, paramsWithNoValues)
+    .forEach(paramsWarns.add('shouldHaveNoValue'))
+
+  return paramsWarns
 }
 
 function getParamsWarnings (badParams, paramsWithBadValues) {
