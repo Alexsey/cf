@@ -7,7 +7,7 @@ const util = require('util')
 
 process.stdout.isTTY = true // some terminals need this
 require('colors').enabled = true // and/or this to enable color output
-const _ = require('lodash') || false // hacking WebStorm syntax highlight bug
+const _ = require('lodash')
 
 
 const code = readCodeFile()
@@ -74,7 +74,7 @@ function parseTestsFile () {
       switch (v.input.slice(0, ioNewLine).trim()) {
         case params['+']: return 'testsRunOnly'
         case params['-']: return 'testsSkip'
-        default : return 'testsCommon'
+        default         : return 'testsCommon'
       }
     })
     testsRunOnly.forEach(v => v.input = v.input.slice(1).trimStart())
@@ -88,7 +88,7 @@ function parseTestsFile () {
   }
 
   function parseParams (paramsLine = '') {
-    const u = getUniqueChar(paramsLine)
+    const u = _(paramsLine).invokeMap('charCodeAt', 0).max() + 1
     const escapedGroups = []
     const quoted = /(?<!\\)"(.*?)(?<!\\)"/g
     const escaped = RegExp(`${u}\\d+${u}`, 'g')
@@ -106,12 +106,6 @@ function parseTestsFile () {
             .replace(/\\"/g, '"')])
       .fromPairs()
       .value() || {}
-
-      function getUniqueChar (str) {
-        let char, code = -1
-        while (str.includes(char = String.fromCodePoint(++code))) {}
-        return char
-      }
   }
 
   function getParamsWarningsStr (params) {
@@ -215,9 +209,9 @@ function print (...parts) {
 }
 
 function getTestsResultsStr (testResults) {
-  (_.findLast(testResults, testResult =>
-  testResult.logs.length || !testResult.isSuccess)
-  || testResults[0]).lastOutput = true
+  const lastNonEmptyOrFiled = _.findLast(testResults, testResult =>
+    testResult.logs.length || !testResult.isSuccess)
+  ;(lastNonEmptyOrFiled || testResults[0]).lastOutput = true
 
   return testResults.map(testResult => {
     const shouldPrintLogs = !testResult.isSuccess || params.l
@@ -274,7 +268,7 @@ function terminate (error) {
     stackTrace = stackTrace.split('\n')
     const message = stackTrace.shift()
     const codeFilePath = formatCodeFilePath(process.argv[2])
-    const codeFileName = _.last(codeFilePath.split(/\\|\//))
+    const codeFileName = _.last(codeFilePath.split(/[\\\/]/))
     const mainStackTrace = stackTrace
       .filter(/ /.test, /eval\sat\s<anonymous>.*<anonymous>:(\d+:\d+)/)
       .map(line => [
