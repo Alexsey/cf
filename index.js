@@ -233,7 +233,7 @@ function getTestsResultsStr (testResults) {
 
   function formatCell (str, color, width) {
     if (str == null) return ' '.repeat(width + 3)
-    if (str == '') return _.padStart('↵', width).cyan.bold + ' '.repeat(3)
+    if (str == '') return '↵'.padStart(width).cyan.bold + ' '.repeat(3)
     return ' '.repeat(width - str.length)
       + str.replace(/\S.*?(?=\s*$)/g, s => s[color].bold)
       .replace(/^\s*|\s*$/g, s => '•'.repeat(s.length).cyan) + ' '.repeat(3)
@@ -276,7 +276,7 @@ function terminate (error) {
     const fnNamesMaxLength = _(mainStackTrace).map(0).map('length').max()
     const formattedMainStackTrace = mainStackTrace.map(
       ([fn, article, [line, pos]]) =>
-        `\t${_.padEnd(fn, fnNamesMaxLength)}  ${article}  ${line - 2}:${pos}`
+        `\t${fn.padEnd(fnNamesMaxLength)}  ${article}  ${line - 2}:${pos}`
     )
     formattedMainStackTrace.unshift(message)
     return formattedMainStackTrace.join('\n')
