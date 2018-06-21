@@ -158,7 +158,7 @@ function runTests (main, tests, params) {
 
     try {
       main(readline, write, print)
-    }  catch (e) {
+    } catch (e) {
       process.stdout.write = nativeStdoutWrite
       console.log(testResult.logs, '\n')
       terminate(e)
@@ -173,18 +173,13 @@ function runTests (main, tests, params) {
     } else if (actual && !actual.endsWith('\n')) {
       testResult.isSuccess = false
       testResult.expectation = 'test output must ends with \\n'
-    } else if (!params.p) {           // compare as is
-      if (actual != expectation + '\n')
-        testResult.isSuccess = false
-    } else {                          // compare with precision
-      /* first iteration of isEqualWith is magic, error prone,
-      useless and undocumented. Be careful on any change inside */
-      if (!_(actual).split('\n').initial().isEqualWith(expectation.split('\n'),
-          (actLine, expLine) => {
-            if ([actLine, expLine].every(isFinite))
-              return Math.abs(expLine - actLine) < Math.pow(10, -params.p)
-          }))
-        testResult.isSuccess = false
+    } else if (params.p) {            // compare with precision
+      testResult.isSuccess =
+        _(actual).split('\n').initial().zip(expectation.split('\n'))
+          .map(([actLine, expLine]) => Math.abs(actLine - expLine))
+          .every(diff => diff < 10 ** -params.p)
+    } else {                          // compare as is
+      testResult.isSuccess = actual == expectation + '\n'
     }
     testResult.actual = actual.replace(/\n$/, '')
 
