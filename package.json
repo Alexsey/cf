@@ -4,7 +4,8 @@
   "description": "codeforces test runner",
   "bin": "./index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test:functional",
+    "test:functional": "mocha --file test/functional/setup.js test/functional/**/*.js"
   },
   "repository": {
     "type": "git",
