@@ -5,7 +5,7 @@
   "bin": "./index.js",
   "scripts": {
     "test": "npm run test:functional",
-    "test:functional": "mocha --file test/functional/setup.js test/functional/**/*.js"
+    "test:functional": "mocha --file test/functional/setup.js test/functional/**/*.test.js"
   },
   "repository": {
     "type": "git",
