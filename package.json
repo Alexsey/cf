@@ -2,7 +2,7 @@
   "name": "cf",
   "version": "0.6.0",
   "description": "codeforces test runner",
-  "bin": "./index.js",
+  "bin": "./src/index.js",
   "scripts": {
     "test": "npm run test:functional",
     "test:functional": "mocha --file test/functional/setup.js test/functional/**/*.test.js"

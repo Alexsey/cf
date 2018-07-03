@@ -5,19 +5,25 @@ const fs = require('fs')
 const path = require('path')
 const util = require('util')
 
-process.stdout.isTTY = true // some terminals need this
-require('colors').enabled = true // and/or this to enable color output
 const _ = require('lodash')
+setupColors()
 
+const runners = require('./runners')
 
 const code = readCodeFile()
-const main = new Function('readline', 'write', 'print', code)
 const {testsToRun, testsQuantity, params, paramsWarningsStr} = parseTestsFile()
-const testsResults = runTests(main, testsToRun, params)
+const testsResults = runTests(code, testsToRun, params)
 const testResultsStr = getTestsResultsStr(testsResults)
 const warningsStr = getWarningsStr(code, testsResults, testsQuantity, params)
 print(paramsWarningsStr, testResultsStr, warningsStr)
 
+function setupColors () {
+  const colors = require('colors')
+  colors.enabled = true // and/or this to enable color output
+  colors.setTheme({
+    warn: ['cyan', 'bold']
+  })
+}
 
 function readCodeFile () {
   const rawCodeFilePath = process.argv[2]
@@ -110,15 +116,17 @@ function parseTestsFile () {
 
   function getParamsWarningsStr (params) {
     const warnings = []
-    const validParams = ['p', 'f', 'l', 's', '@', '+', '-', 'k', '\\']
+    const validParams = ['r', 'p', 'f', 'l', 's', '@', '+', '-', 'k', '\\']
     const unknownParams = _.difference(_.keys(params), validParams)
     if (unknownParams.length)
       warnings.push((`unknown parameter${sForPlural(unknownParams)}: ` +
-      `${unknownParams.join(', ')}`).cyan.bold)
+        `${unknownParams.join(', ')}`))
     if ('p' in params && !isFinite(params.p))
-      warnings.push('parameter `p` should be a number'.cyan.bold)
+      warnings.push(`parameter 'p' should be a number`)
+    if (params.r && !runners.has(params.r))
+      warnings.push(`parameter 'r' should be one of\n${runners.list()}`)
     paramsShouldHaveValueWarnings(['s', '@', '+', '-', '\\'], params, warnings)
-    return warnings.join('\n')
+    return _(warnings).map('warn').join('\n')
 
     function sForPlural (arr) {
       return arr.length > 1 ? 's' : ''
@@ -127,61 +135,56 @@ function parseTestsFile () {
     function paramsShouldHaveValueWarnings (paramsToTest, params, warnings) {
       paramsToTest.forEach(param => {
         if (param in params && !params[param])
-          warnings.push(`parameter '${param}' should have a value`.cyan.bold)
+          warnings.push(`parameter '${param}' should have a value`)
       })
     }
   }
 
   function setDefaultParams (params) {
     _.defaults(params, {'@': '@', '+': '+', '-': '-', '\\': '\\\\'})
+    if (!params.r) params.r = 'd8'
     if ('f' in params) params.f = true
     if ('l' in params) params.l = true
-    if (!('k' in params) || params.k) params.k = (params.k || 'OK!').green.bold
     if (params.s) params.s = params.s.cyan.bold
+    if (!('k' in params) || params.k) params.k = (params.k || 'OK!').green.bold
     return params
   }
 }
 
-function runTests (main, tests, params) {
+function runTests (code, tests, params) {
   const nativeStdoutWrite = process.stdout.write
+  const nativeStderrWrite = process.stderr.write
   return _(_(tests).cloneDeep()).transform((testsResults, testResult) => {
     testsResults.push(testResult)
     testResult.isSuccess = true
-    testResult.logs = ''
-    process.stdout.write = chunk => testResult.logs += chunk
     const {input, expectation} = testResult
-    let actual = ''
-    const inputByLine = input.split('\n').reverse()
-    const readline = () => inputByLine.pop()
-    const write = str => actual += str
-    const print = str => actual += str + '\n'
 
-    try {
-      main(readline, write, print)
-    } catch (e) {
-      process.stdout.write = nativeStdoutWrite
-      console.log(testResult.logs, '\n')
-      terminate(e)
-    }
+    const {stdout, stderr, error} = runners[params.r].run(code, input)
     process.stdout.write = nativeStdoutWrite
+    process.stderr.write = nativeStderrWrite
+    if (error) {
+      console.log(stderr, '\n')
+      terminate(error)
+    }
 
     if (expectation == params['@']) { // expect empty output
-      if (actual) {
+      if (stdout) {
         testResult.isSuccess = false
         testResult.expectation = 'empty result expected'
       }
-    } else if (actual && !actual.endsWith('\n')) {
+    } else if (stdout && !stdout.endsWith('\n')) {
       testResult.isSuccess = false
       testResult.expectation = 'test output must ends with \\n'
     } else if (params.p) {            // compare with precision
       testResult.isSuccess =
-        _(actual).split('\n').initial().zip(expectation.split('\n'))
+        _(stdout).split('\n').initial().zip(expectation.split('\n'))
           .map(([actLine, expLine]) => Math.abs(actLine - expLine))
           .every(diff => diff < 10 ** -params.p)
     } else {                          // compare as is
-      testResult.isSuccess = actual == expectation + '\n'
+      testResult.isSuccess = stdout == expectation + '\n'
     }
-    testResult.actual = actual.replace(/\n$/, '')
+    testResult.stdout = stdout.replace(/\n$/, '')
+    testResult.stderr = stderr
 
     if (!testResult.isSuccess && !params.f) return false
   }).value()
@@ -205,30 +208,30 @@ function print (...parts) {
 
 function getTestsResultsStr (testResults) {
   const lastNonEmptyOrFiled = _.findLast(testResults, testResult =>
-    testResult.logs.length || !testResult.isSuccess)
+    testResult.stderr.length || !testResult.isSuccess)
   ;(lastNonEmptyOrFiled || testResults[0]).lastOutput = true
 
   return testResults.map(testResult => {
-    const shouldPrintLogs = !testResult.isSuccess || params.l
-    const logsToPrint = shouldPrintLogs ? testResult.logs : ''
-    const logsSeparator = logsToPrint
+    const shouldPrintStderr = !testResult.isSuccess || params.l
+    const stderrToPrint = shouldPrintStderr ? testResult.stderr : ''
+    const stderrSeparator = stderrToPrint
       && testResult.isSuccess && !testResult.lastOutput && params.s
 
     const expectations = testResult.expectation.split('\n')
-    const actuals      = testResult.actual     .split('\n')
+    const stdouts      = testResult.stdout     .split('\n')
     const inputs       = testResult.input      .split('\n')
 
     const expectationWidth = _(expectations).map('length').max()
     const inputWidth       = _(inputs)      .map('length').max()
-    const actualWidth      = _(actuals)     .map('length').max()
+    const stdoutWidth      = _(stdouts)     .map('length').max()
 
-    const resultHeight = _([expectations, actuals, inputs]).map('length').max()
+    const resultHeight = _([expectations, stdouts, inputs]).map('length').max()
     const result = testResult.isSuccess ? [] : _.times(resultHeight, () =>
       formatCell(inputs.pop(), 'yellow', inputWidth) +
       formatCell(expectations.pop(), 'green', expectationWidth) +
-      formatCell(actuals.pop(), 'red', actualWidth)).reverse()
+      formatCell(stdouts.pop(), 'red', stdoutWidth)).reverse()
 
-    return [logsToPrint, logsSeparator, ...result].filter(Boolean).join('\n')
+    return _([stderrToPrint, stderrSeparator, ...result]).compact.join('\n')
   }).filter(Boolean).join('\n\n')
 
   function formatCell (str, color, width) {
