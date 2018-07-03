@@ -1,5 +1,7 @@
 'use strict'
 
+const colors = require('colors')
+
 describe('Basic', () => {
   let initialCwd
   before(() => {
@@ -12,6 +14,9 @@ describe('Basic', () => {
   })
 
   it('should run all tests', async () => {
-    shell('cf test')
+    const {stdout, stderr} = shell('cf test')
+    stderr.should.equal('')
+    colors.strip(stdout).should.equal('OK!\n')
+    stdout.should.equal('OK!'.green.bold + '\n')
   });
 });

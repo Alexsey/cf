@@ -11,6 +11,9 @@ const {name, version} = require('../../package')
 const packFile = `${name}-${version}.tgz`
 const rootFolder = process.cwd()
 
+// todo create custom chai assertion
+// todo think of something for process.cwd to return file dir during tests
+
 before(function () {
   this.timeout(10000)
 

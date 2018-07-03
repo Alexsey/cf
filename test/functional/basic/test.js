@@ -1,14 +1,9 @@
-'use strict'
+var l = readline().split(' ').map(function (v) {return parseInt(v)}).sort(function (a, b) {return a - b})
+var a = l[0]
+var b = l[1]
+var c = l[2]
+var d = l[3]
 
-let m = 100
-
-let primes = []
-
-a: for (let i = 2; i <= m; i++) {
-  for (let j = 0; j < primes.length; j++) {
-    if (i / primes[j] == (i / primes[j] | 0)) continue a
-  }
-  primes.push(i)
-}
-
-console.log(primes)
+if (c > a + b && d > b + c) {print('IMPOSSIBLE')}
+else if ((c > a + b && (d == b + c)) || (c == a + b && d >= b + c)) {print('SEGMENT')}
+else {print('TRIANGLE')}

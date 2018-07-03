@@ -1,5 +1,10 @@
 'use strict'
 
+module.exports = {
+  run,
+  validateCode,
+}
+
 function run (code, input) {
   const main = new Function('readline', 'write', 'print', code)
   let stderr = ''
@@ -23,4 +28,11 @@ function run (code, input) {
     stderr,
     error
   }
+}
+
+function validateCode (code) {
+  return [
+    code.includes('console.dir') && 'console.dir'.yellow.bold,
+    code.includes('console.log') && 'console.log'.yellow.bold
+  ].filter(Boolean)
 }

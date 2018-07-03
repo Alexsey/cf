@@ -2,14 +2,19 @@
 
 const {transform, map} = require('lodash')
 
-const runners = {
-  d8: require('./d8'),
-  node: require('./node')
-}
-
 const aliases = {
   d8: ['javascript'],
   node: ['nodejs', 'js']
+}
+
+module.exports = {
+  get,
+  list,
+}
+
+const runners = {
+  d8: require('./d8'),
+  node: require('./node')
 }
 
 const runnersNamesByAliases = transform(
@@ -20,16 +25,11 @@ const runnersNamesByAliases = transform(
   }, {}
 )
 
-// todo start here format alias outside and use regular object here
-module.exports = new Proxy({}, {
-  get: (target, rawAlias) => {
-    if (rawAlias == 'has') return () => rawAlias in runners
-    if (rawAlias == 'list') return list
-    const alias = rawAlias.toLowerCase().replace(/[^a-z0-9.]/g, '')
-    const runnerName = runnersNamesByAliases[alias]
-    return runners[runnerName]
-  }
-})
+function get (rawAlias) {
+  const alias = rawAlias.toLowerCase().replace(/[^a-z0-9.]/g, '')
+  const runnerName = runnersNamesByAliases[alias]
+  return runners[runnerName]
+}
 
 function list () {
   map(runners, runnerName => {

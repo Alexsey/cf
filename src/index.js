@@ -8,7 +8,7 @@ const util = require('util')
 const _ = require('lodash')
 setupColors()
 
-const runners = require('./runners')
+const runners = require('./runners') // todo pass where needed
 
 const code = readCodeFile()
 const {testsToRun, testsQuantity, params, paramsWarningsStr} = parseTestsFile()
@@ -19,7 +19,6 @@ print(paramsWarningsStr, testResultsStr, warningsStr)
 
 function setupColors () {
   const colors = require('colors')
-  colors.enabled = true // and/or this to enable color output
   colors.setTheme({
     warn: ['cyan', 'bold']
   })
@@ -123,7 +122,7 @@ function parseTestsFile () {
         `${unknownParams.join(', ')}`))
     if ('p' in params && !isFinite(params.p))
       warnings.push(`parameter 'p' should be a number`)
-    if (params.r && !runners.has(params.r))
+    if (params.r && !runners.get(params.r))
       warnings.push(`parameter 'r' should be one of\n${runners.list()}`)
     paramsShouldHaveValueWarnings(['s', '@', '+', '-', '\\'], params, warnings)
     return _(warnings).map('warn').join('\n')
@@ -154,12 +153,13 @@ function parseTestsFile () {
 function runTests (code, tests, params) {
   const nativeStdoutWrite = process.stdout.write
   const nativeStderrWrite = process.stderr.write
+  const {run} = runners.get(params.r)
   return _(_(tests).cloneDeep()).transform((testsResults, testResult) => {
     testsResults.push(testResult)
     testResult.isSuccess = true
     const {input, expectation} = testResult
 
-    const {stdout, stderr, error} = runners[params.r].run(code, input)
+    const {stdout, stderr, error} = run(code, input)
     process.stdout.write = nativeStdoutWrite
     process.stderr.write = nativeStderrWrite
     if (error) {
@@ -193,8 +193,8 @@ function runTests (code, tests, params) {
 function getWarningsStr (code, testResult, testsQuantity, params) {
   if (!_.every(testResult, 'isSuccess')) return
   const warnings = []
-  if (code.includes('console.dir')) warnings.push('console.dir'.yellow.bold)
-  if (code.includes('console.log')) warnings.push('console.log'.yellow.bold)
+  const {validateCode} = runners.get(params.r)
+  if (validateCode) warnings.push(...validateCode(code))
   if (testResult.length < testsQuantity) {
     warnings.push(`${testResult.length} of ${testsQuantity}`.green.bold)
   } else if (params.k) {warnings.push(params.k)}
@@ -231,7 +231,7 @@ function getTestsResultsStr (testResults) {
       formatCell(expectations.pop(), 'green', expectationWidth) +
       formatCell(stdouts.pop(), 'red', stdoutWidth)).reverse()
 
-    return _([stderrToPrint, stderrSeparator, ...result]).compact.join('\n')
+    return _([stderrToPrint, stderrSeparator, ...result]).compact().join('\n')
   }).filter(Boolean).join('\n\n')
 
   function formatCell (str, color, width) {
