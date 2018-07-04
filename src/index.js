@@ -16,6 +16,7 @@ const testsResults = runTests(code, testsToRun, params)
 const testResultsStr = getTestsResultsStr(testsResults)
 const warningsStr = getWarningsStr(code, testsResults, testsQuantity, params)
 print(paramsWarningsStr, testResultsStr, warningsStr)
+process.stdin.destroy() // ensure stdin will not hang the program
 
 function setupColors () {
   const colors = require('colors')
@@ -153,7 +154,7 @@ function parseTestsFile () {
 function runTests (code, tests, params) {
   const nativeStdoutWrite = process.stdout.write
   const nativeStderrWrite = process.stderr.write
-  const {run} = runners.get(params.r)
+  const {run} = runners.get(params.r) // todo start here add setup and teardown
   return _(_(tests).cloneDeep()).transform((testsResults, testResult) => {
     testsResults.push(testResult)
     testResult.isSuccess = true
