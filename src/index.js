@@ -142,7 +142,7 @@ function parseTestsFile () {
 
   function setDefaultParams (params) {
     _.defaults(params, {'@': '@', '+': '+', '-': '-', '\\': '\\\\'})
-    if (!params.r) params.r = 'd8'
+    if (!params.r) params.r = 'node'
     if ('f' in params) params.f = true
     if ('l' in params) params.l = true
     if (params.s) params.s = params.s.cyan.bold
