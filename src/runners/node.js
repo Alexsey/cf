@@ -35,7 +35,9 @@ function teardown () {
 }
 
 function run (code, input) {
-  const main = new Function(code)
+  const main = new Function('require', 'process',
+    `return () => {${code}}`
+  )(require, process)
   let error = null
   let stderr = ''
   let stdout = ''
