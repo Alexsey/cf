@@ -1,8 +1,20 @@
 'use strict'
 
 module.exports = {
+  setup,
+  teardown,
   run,
   validateCode,
+}
+
+let nativeStdoutWrite
+
+function setup () {
+  nativeStdoutWrite = process.stdout.write
+}
+
+function teardown () {
+  process.stdout.write = nativeStdoutWrite
 }
 
 function run (code, input) {

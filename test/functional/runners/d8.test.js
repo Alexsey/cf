@@ -14,7 +14,7 @@ describe('d8', () => {
   })
 
   it('should run all tests', async () => {
-    const {stdout, stderr} = shell('cf test d8')
+    const {stdout, stderr} = shell('cf d8')
     stderr.should.equal('')
     colors.strip(stdout).should.equal('OK!\n')
     stdout.should.equal('OK!'.green.bold + '\n')

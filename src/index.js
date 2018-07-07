@@ -152,18 +152,18 @@ function parseTestsFile () {
 }
 
 function runTests (code, tests, params) {
-  const nativeStdoutWrite = process.stdout.write
-  const nativeStderrWrite = process.stderr.write
-  const {run} = runners.get(params.r) // todo start here add setup and teardown
-  return _(_(tests).cloneDeep()).transform((testsResults, testResult) => {
+  tests = _(tests).cloneDeep()
+  const {run, setup, teardown} = runners.get(params.r)
+
+  setup()
+  const testResults = _(tests).transform((testsResults, testResult) => {
     testsResults.push(testResult)
     testResult.isSuccess = true
     const {input, expectation} = testResult
 
     const {stdout, stderr, error} = run(code, input)
-    process.stdout.write = nativeStdoutWrite
-    process.stderr.write = nativeStderrWrite
     if (error) {
+      teardown()
       console.log(stderr, '\n')
       terminate(error)
     }
@@ -189,6 +189,9 @@ function runTests (code, tests, params) {
 
     if (!testResult.isSuccess && !params.f) return false
   }).value()
+  teardown()
+
+  return testResults
 }
 
 function getWarningsStr (code, testResult, testsQuantity, params) {
@@ -269,7 +272,7 @@ function terminate (error) {
     const codeFilePath = formatCodeFilePath(process.argv[2])
     const codeFileName = _.last(codeFilePath.split(/[\\\/]/))
     const mainStackTrace = stackTrace
-      .filter(/ /.test, /eval\sat\s<anonymous>.*<anonymous>:(\d+:\d+)/)
+      .filter(/ /.test, /eval\sat\srun.*<anonymous>:(\d+:\d+)/)
       .map(line => [
         line.match(/at\s([^\s]+)/)[1],
         'at',
