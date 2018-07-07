@@ -1,15 +1,14 @@
 'use strict'
 
-const fs = require('fs')
-
 const shellJs = require('shelljs')
+
+const {installGlobalFromPack} = require('../../scripts')
+
+const {name} = require('../../package')
+const rootFolder = process.cwd()
 
 global.shell = (command, options) =>
   shellJs.exec(command, {silent: true, ...options})
-
-const {name, version} = require('../../package')
-const packFile = `${name}-${version}.tgz`
-const rootFolder = process.cwd()
 
 // todo create custom chai assertion
 // todo think of something for process.cwd to return file dir during tests
@@ -17,8 +16,7 @@ const rootFolder = process.cwd()
 before(function () {
   this.timeout(10000)
 
-  shell('npm pack .')
-  shell(`npm i -g ${packFile}`)
+  installGlobalFromPack()
   process.chdir(__dirname)
 })
 
@@ -27,5 +25,4 @@ after(function () {
 
   process.chdir(rootFolder)
   shell(`npm uninstall -g ${name}`)
-  fs.unlinkSync(`./${packFile}`)
 })

@@ -4,6 +4,7 @@
   "description": "codeforces test runner",
   "bin": "./src/index.js",
   "scripts": {
+    "i": "node ./scripts/installGlobalFromPack",
     "test": "npm run test:functional",
     "test:functional": "mocha --file test/functional/setup.js test/functional/**/*.test.js"
   },
