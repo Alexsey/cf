@@ -4,6 +4,7 @@
 const fs = require('fs')
 const path = require('path')
 const util = require('util')
+const {EOL} = require('os')
 
 const _ = require('lodash')
 setupColors()
@@ -69,11 +70,14 @@ function parseTestsFile () {
   }
 
   function parseTests (paragraphs, params) {
-    const tests = _.chunk(paragraphs, 2)
+    const tests = _(paragraphs)
+      .chunk(2)
       .map(([input, expectation]) => ({
-        input: input.replace(RegExp(params['\\'], 'g'), ''),
+        input: input
+          .replace(RegExp(params['\\'], 'g'), '')
+          .replace(/\r|\n|\r\n/g, EOL),
         expectation: expectation.replace(RegExp(params['\\'], 'g'), '')
-      }))
+      })).value()
 
     const {testsRunOnly = [], testsCommon = []} = _.groupBy(tests, v => {
       const ioNewLine = v.input.indexOf('\n')

@@ -1,5 +1,7 @@
 'use strict'
 
+const {EOL} = require('os')
+
 module.exports = {
   setup,
   teardown,
@@ -24,7 +26,7 @@ function run (code, input) {
   let error = null
 
   process.stdout.write = chunk => stderr += chunk
-  const inputByLine = input.split('\n').reverse()
+  const inputByLine = input.split(EOL).reverse()
   const readline = () => inputByLine.pop()
   const write = str => stdout += str
   const print = str => stdout += str + '\n'
