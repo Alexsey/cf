@@ -169,7 +169,7 @@ function runTests (code, tests, params) {
     const {stdout, stderr, error} = run(code, input)
     if (error) {
       teardown()
-      console.log(stderr, '\n')
+      if (stderr) console.log(stderr, '\n')
       terminate(error)
     }
 
