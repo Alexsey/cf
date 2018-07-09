@@ -9,4 +9,5 @@ const packFile = `${name}-${version}.tgz`
 
 shellJs.exec('npm pack .', {silent: true})
 shellJs.exec(`npm i -g ${packFile}`, {silent: true})
-fs.unlinkSync(`./${packFile}`)
+// npm uninstall -g cf will not work without tarball file. NPM bug
+// fs.unlinkSync(`./${packFile}`)
