@@ -75,7 +75,8 @@ function parseTestsFile () {
       .map(([input, expectation]) => ({
         input: input
           .replace(RegExp(params['\\'], 'g'), '')
-          .replace(/\r|\n|\r\n/g, EOL),
+          .replace(/\r|\n|\r\n/g, EOL)
+          + EOL,
         expectation: expectation.replace(RegExp(params['\\'], 'g'), '')
       })).value()
 
@@ -188,6 +189,7 @@ function runTests (code, tests, params) {
     } else {                          // compare as is
       testResult.isSuccess = stdout == expectation + '\n'
     }
+    testResult.input = input.replace(RegExp(`${EOL}$`), '')
     testResult.stdout = stdout.replace(/\n$/, '')
     testResult.stderr = stderr
 
@@ -227,7 +229,7 @@ function getTestsResultsStr (testResults) {
 
     const expectations = testResult.expectation.split('\n')
     const stdouts      = testResult.stdout     .split('\n')
-    const inputs       = testResult.input      .split('\n')
+    const inputs       = testResult.input      .split(EOL)
 
     const expectationWidth = _(expectations).map('length').max()
     const inputWidth       = _(inputs)      .map('length').max()
