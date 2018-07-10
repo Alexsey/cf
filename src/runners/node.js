@@ -7,10 +7,7 @@ module.exports = {
   validateCode,
 }
 
-const errConsole = new console.Console({
-  stdout: process.stderr,
-  stderr: process.stderr
-})
+const errConsole = new console.Console(process.stderr, process.stderr)
 
 let nativeStdoutWrite, nativeStderrWrite, originalStdinOn, originalStdinPush
 let originalDebug = console.debug
